@@ -1,0 +1,4 @@
+https://www.unisportstore.com/sneakers/nike-sneaker-air-max-90-white/246085/
+total: 7
+successed: 7
+failed: 0

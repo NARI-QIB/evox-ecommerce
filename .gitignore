@@ -1,0 +1,21 @@
+# Dependency directories (تجاهل المكتبات في أي مكان)
+node_modules/
+
+# Environment variables (تجاهل ملفات الأسرار - هامة جداً لـ Cloudinary و MongoDB)
+.env
+.env.local
+.env.production
+
+# Build outputs (تجاهل ملفات الإنتاج الخاصة بالفرونت)
+frontend/dist/
+frontend/build/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+repomix-output.xmlrepomix-output.xml
