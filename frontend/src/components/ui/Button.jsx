@@ -16,17 +16,28 @@ const Button = ({
       type = 'button',
       ...props
 }) => {
-      // 🌟 تم إضافة active:translate-y-0 لضمان سلاسة حركة النقر مع الـ hover
+      // 🌟 الخصائص الأساسية: سلاسة الحركة وتأثير النقر النابض (active:scale)
       const baseClasses = "inline-flex items-center justify-center gap-2 font-heading uppercase tracking-wider font-black transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 active:scale-[0.97] active:translate-y-0 select-none text-center cursor-pointer";
 
+      // 🌟 التعديل الجوهري للـ Hover: المحافظة على اللون الأساسي مع رفع الزر (Elevation) وزيادة الظل والوهج
       const variants = {
-            primary: "bg-primary text-white shadow-lg shadow-primary/10 hover:bg-dark hover:text-white hover:shadow-xl hover:shadow-dark/20 hover:-translate-y-0.5 border border-transparent disabled:bg-primary/70",
-            secondary: "bg-dark text-white shadow-lg shadow-dark/10 hover:bg-primary hover:text-white hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-0.5 border border-transparent disabled:bg-dark/70",
-            soft: "bg-slate-100 text-dark hover:bg-dark hover:text-white border border-transparent disabled:bg-slate-50 disabled:text-gray-400",
-            // 🌟 تم تعديل hover:border-dark و hover:text-dark إلى hover:border-primary و hover:text-primary
-            outline: "bg-transparent text-gray-500 border border-gray-200 hover:border-primary hover:text-primary shadow-sm disabled:border-gray-100 disabled:text-gray-300",
-            danger: "bg-red-600 text-white shadow-lg shadow-red-600/10 hover:bg-red-700 hover:shadow-xl hover:-translate-y-0.5 border border-transparent",
-            ghost: "bg-transparent text-gray-500 hover:text-dark hover:bg-gray-100 border border-transparent"
+            // الزر الرئيسي: برتقالي يصبح داكناً قليلاً مع توهج برتقالي
+            primary: "bg-primary text-white shadow-lg shadow-primary/20 hover:bg-[#e06612] hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 border border-transparent disabled:bg-primary/50 disabled:shadow-none",
+
+            // الزر الثانوي: كحلي/أسود يصبح أفتح قليلاً مع زيادة الظل الداكن
+            secondary: "bg-dark text-white shadow-lg shadow-dark/20 hover:bg-slate-800 hover:shadow-xl hover:shadow-dark/40 hover:-translate-y-0.5 border border-transparent disabled:bg-dark/50 disabled:shadow-none",
+
+            // الزر الناعم: رمادي فاتح يبقى رمادياً لكن أغمق بدرجة بسيطة مع ظل خفيف
+            soft: "bg-slate-100 text-dark hover:bg-slate-200 hover:shadow-sm hover:-translate-y-0.5 border border-transparent disabled:bg-slate-50 disabled:text-gray-400 disabled:shadow-none",
+
+            // زر الإطار المفرغ: تلوين الحدود والنص بالبرتقالي عند الـ Hover مع خلفية شفافة جداً
+            outline: "bg-white text-gray-500 border-2 border-gray-200 hover:border-primary hover:text-primary hover:bg-primary/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:border-gray-100 disabled:text-gray-300 disabled:shadow-none",
+
+            // زر الخطر/الحذف: أحمر يتحول لأحمر داكن مع توهج
+            danger: "bg-red-500 text-white shadow-lg shadow-red-500/20 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-0.5 border border-transparent disabled:bg-red-400 disabled:shadow-none",
+
+            // الزر الشفاف تماماً: يستخدم للنصوص القابلة للنقر كأزرار
+            ghost: "bg-transparent text-gray-500 hover:text-dark hover:bg-gray-100 border border-transparent disabled:opacity-50"
       };
 
       const sizes = {
@@ -42,7 +53,7 @@ const Button = ({
     ${ variants[variant] } 
     ${ sizes[size] } 
     ${ fullWidth ? 'flex w-full' : 'inline-flex' } 
-    ${ isDisabled ? 'opacity-70 cursor-not-allowed hover:transform-none hover:shadow-md' : '' } 
+    ${ isDisabled ? 'opacity-70 cursor-not-allowed hover:transform-none hover:shadow-none' : '' } 
     ${ className }
   `.trim();
 
@@ -55,6 +66,7 @@ const Button = ({
             </>
       );
 
+      // التعامل مع الروابط (React Router)
       if (to && !isDisabled) {
             return (
                   <Link to={to} className={finalClasses} {...props}>
@@ -63,6 +75,7 @@ const Button = ({
             );
       }
 
+      // التعامل مع الأزرار العادية
       return (
             <button
                   type={type}

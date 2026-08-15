@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../context/LanguageContext';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// 🌟 تحسين جودة الصور عبر التلاعب برابط Cloudinary لضغط الصور دون فقد الجودة
 const optimizeCloudinaryUrl = (url) => {
   if (!url || !url.includes('cloudinary.com')) return url;
   if (url.includes('/upload/') && !url.includes('f_auto')) {
@@ -42,7 +41,11 @@ const Product = ({ product }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const isWishlisted = wishlist.some(item => (item._id || item) === product?._id);
+  // 🌟 تم الإصلاح: مطابقة معرفات المفضلة تحسباً لاختلاف النوع بين String و ObjectId
+  const isWishlisted = wishlist.some(item => {
+    const itemId = typeof item === 'object' ? item._id : item;
+    return String(itemId) === String(product?._id);
+  });
 
   const toggleWishlistMutation = useMutation({
     mutationFn: async () => {
@@ -55,7 +58,10 @@ const Product = ({ product }) => {
 
       let updatedWishlist;
       if (isWishlisted) {
-        updatedWishlist = previousWishlist.filter(item => (item._id || item) !== product._id);
+        updatedWishlist = previousWishlist.filter(item => {
+          const itemId = typeof item === 'object' ? item._id : item;
+          return String(itemId) !== String(product._id);
+        });
       } else {
         updatedWishlist = [...previousWishlist, product];
       }
@@ -130,7 +136,7 @@ const Product = ({ product }) => {
       <button
         onClick={toggleWishlistHandler}
         disabled={toggleWishlistMutation.isPending}
-        className="absolute top-3 end-3 z-10 p-2 transition-transform duration-300 hover:scale-110 focus:outline-none"
+        className="absolute top-3 end-3 z-10 p-2 transition-transform duration-300 hover:scale-110 focus:outline-none cursor-pointer"
       >
         {isWishlisted ? (
           <FaHeart className="text-red-500 text-xl drop-shadow-sm" />

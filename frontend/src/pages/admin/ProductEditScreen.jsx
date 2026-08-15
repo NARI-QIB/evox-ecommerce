@@ -1,5 +1,6 @@
-import { useState, useEffect, useContext, useRef } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+// filepath: frontend/src/pages/admin/ProductEditScreen.jsx
+import { useState, useEffect, useContext } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthContext } from '../../context/AuthContext';
@@ -7,8 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import Button from '../../components/ui/Button';
+import CustomSelect from '../../components/ui/CustomSelect';
 import {
-  FaBoxOpen, FaSave, FaArrowLeft, FaArrowRight, FaUpload, FaEdit, FaChevronDown,
+  FaBoxOpen, FaSave, FaArrowLeft, FaArrowRight, FaUpload, FaEdit,
   FaImages, FaTimes, FaTags, FaPlus, FaChartLine, FaPalette,
   FaListUl, FaInfoCircle, FaStar, FaCheck
 } from 'react-icons/fa';
@@ -19,7 +21,7 @@ const ProductEditScreen = () => {
   const queryClient = useQueryClient();
   const { userInfo } = useContext(AuthContext);
   const { t } = useTranslation();
-  const { lang } = useLanguage();
+  const { lang, getDBText } = useLanguage();
 
   const [nameEn, setNameEn] = useState('');
   const [nameAr, setNameAr] = useState('');
@@ -43,16 +45,6 @@ const ProductEditScreen = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsCategoryDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categoriesList'],
@@ -190,7 +182,10 @@ const ProductEditScreen = () => {
 
   if (isError) return <div className="p-4 m-8 bg-red-50 text-red-700 font-bold">{error.message}</div>;
 
-  const selectedCategoryObj = categories.find(cat => cat._id === category);
+  const categoryOptions = categories.map((cat) => ({
+    value: cat._id,
+    label: getDBText(cat.name)
+  }));
 
   const inputStyle = "block px-4 pb-2.5 pt-6 w-full text-sm text-dark bg-white rounded-xl border-2 border-gray-100 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 peer transition-all shadow-sm";
   const labelStyle = "absolute text-xs duration-300 transform -translate-y-3 scale-75 top-3 z-10 origin-top-left rtl:origin-top-right start-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1 peer-focus:scale-75 peer-focus:-translate-y-3 font-bold bg-white px-1 text-gray-400 peer-focus:text-primary pointer-events-none";
@@ -259,8 +254,8 @@ const ProductEditScreen = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-start">
                 <div className="relative group">
-                  <input type="text" id="styleCode" value={styleCode} onChange={(e) => setStyleCode(e.target.value.toUpperCase())} required className="block px-4 pb-2.5 pt-6 w-full text-sm text-dark bg-yellow-50 rounded-xl border-2 border-yellow-200 focus:outline-none focus:border-yellow-400 peer uppercase text-start shadow-sm" placeholder=" " dir="ltr" />
-                  <label htmlFor="styleCode" className="absolute text-xs duration-300 transform -translate-y-3 scale-75 top-3 z-10 origin-top-left rtl:origin-top-right start-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1 peer-focus:scale-75 peer-focus:-translate-y-3 font-bold bg-transparent px-1 text-yellow-700 pointer-events-none">{t('productEdit.style_code')}</label>
+                  <input type="text" id="styleCode" value={styleCode} onChange={(e) => setStyleCode(e.target.value.toUpperCase())} required className="block px-4 pb-2.5 pt-6 w-full text-sm text-dark bg-orange-50/50 rounded-xl border-2 border-orange-200 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 peer uppercase text-start shadow-sm" placeholder=" " dir="ltr" />
+                  <label htmlFor="styleCode" className="absolute text-xs duration-300 transform -translate-y-3 scale-75 top-3 z-10 origin-top-left rtl:origin-top-right start-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-1 peer-focus:scale-75 peer-focus:-translate-y-3 font-bold bg-transparent px-1 text-primary pointer-events-none">{t('productEdit.style_code')}</label>
                 </div>
                 <div className="relative group">
                   <input type="text" id="colorNameEn" value={colorNameEn} onChange={(e) => setColorNameEn(e.target.value)} className={`${ inputStyle } text-start`} placeholder=" " dir="ltr" />
@@ -288,7 +283,7 @@ const ProductEditScreen = () => {
                           {image === img && <div className="absolute top-2 start-2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-md flex items-center gap-1"><FaCheck /> {t('productEdit.main')}</div>}
                         </div>
                         <div className="flex bg-gray-50 border-t border-gray-100">
-                          <button type="button" onClick={() => setImage(img)} className={`flex-1 text-[10px] font-bold py-2 transition-colors cursor-pointer ${ image === img ? 'text-primary bg-blue-50' : 'text-gray-500 hover:bg-gray-200' }`}>{image === img ? t('productEdit.cover_image') : t('productEdit.make_cover')}</button>
+                          <button type="button" onClick={() => setImage(img)} className={`flex-1 text-[10px] font-bold py-2 transition-colors cursor-pointer ${ image === img ? 'text-primary bg-orange-50' : 'text-gray-500 hover:bg-gray-200' }`}>{image === img ? t('productEdit.cover_image') : t('productEdit.make_cover')}</button>
                           <div className="w-px bg-gray-200"></div>
                           <button type="button" onClick={() => removeGalleryImage(idx)} className="w-10 text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center cursor-pointer"><FaTimes /></button>
                         </div>
@@ -321,20 +316,22 @@ const ProductEditScreen = () => {
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-6">
               <h2 className="text-xl font-bold flex items-center gap-2 border-b pb-4 text-start"><FaTags className="text-primary" /> {t('productEdit.categorization')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="relative text-start" ref={dropdownRef}>
-                  <div onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)} className="w-full px-4 py-3.5 border-2 rounded-xl flex justify-between items-center cursor-pointer transition-colors hover:border-gray-300 bg-white">
-                    <div className="flex flex-col">
+
+                {/* 🌟 قائمة اختيار القسم الرئيسي المحدثة بالمكون الموحد CustomSelect */}
+                <CustomSelect
+                  options={categoryOptions}
+                  value={category}
+                  onChange={(val) => setCategory(val)}
+                  placeholder={t('productEdit.select_category')}
+                  triggerClassName="!py-3.5 !bg-white hover:!border-primary"
+                  renderValue={(opt) => (
+                    <div className="flex flex-col text-start">
                       <span className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">{t('productEdit.main_category')}</span>
-                      <span className="font-bold">{selectedCategoryObj ? selectedCategoryObj.name[lang === 'ar' ? 'ar' : 'en'] : t('productEdit.select_category')}</span>
-                    </div>
-                    <FaChevronDown className={`transition-transform ${ isCategoryDropdownOpen ? 'rotate-180 text-primary' : '' }`} />
-                  </div>
-                  {isCategoryDropdownOpen && (
-                    <div className="absolute top-full start-0 w-full bg-white shadow-xl rounded-xl z-20 border max-h-48 overflow-y-auto mt-1">
-                      {categories.map(cat => <div key={cat._id} onClick={() => { setCategory(cat._id); setIsCategoryDropdownOpen(false); }} className="p-3 hover:bg-gray-50 cursor-pointer font-bold border-b border-gray-50">{cat.name[lang === 'ar' ? 'ar' : 'en']}</div>)}
+                      <span className="font-bold text-dark">{opt ? opt.label : t('productEdit.select_category')}</span>
                     </div>
                   )}
-                </div>
+                />
+
                 <div className="relative group text-start">
                   <input type="text" id="subCategory" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} className={`${ inputStyle } text-start`} placeholder=" " dir="ltr" />
                   <label htmlFor="subCategory" className={labelStyle}>{t('productEdit.sub_category_hint')}</label>
@@ -381,8 +378,8 @@ const ProductEditScreen = () => {
               </div>
               {specifications.map((spec, index) => (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 relative group items-center bg-gray-50 p-3 rounded-xl border border-gray-100 text-start">
-                  <div className="md:col-span-5 space-y-2"><input type="text" value={spec.name.en} onChange={(e) => handleArrayChange(setSpecifications, index, 'name.en', e.target.value)} placeholder={t('productEdit.spec_name_en')} className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:outline-none transition-colors bg-white" dir="ltr" /><input type="text" value={spec.name.ar} onChange={(e) => handleArrayChange(setSpecifications, index, 'name.ar', e.target.value)} placeholder={t('productEdit.spec_name_ar')} dir="rtl" className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:outline-none text-end transition-colors bg-white" /></div>
-                  <div className="md:col-span-6 space-y-2"><input type="text" value={spec.value.en} onChange={(e) => handleArrayChange(setSpecifications, index, 'value.en', e.target.value)} placeholder={t('productEdit.spec_val_en')} className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:outline-none transition-colors bg-white" dir="ltr" /><input type="text" value={spec.value.ar} onChange={(e) => handleArrayChange(setSpecifications, index, 'value.ar', e.target.value)} placeholder={t('productEdit.spec_val_ar')} dir="rtl" className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:outline-none text-end transition-colors bg-white" /></div>
+                  <div className="md:col-span-5 space-y-2"><input type="text" value={spec.name.en} onChange={(e) => handleArrayChange(setSpecifications, index, 'name.en', e.target.value)} placeholder={t('productEdit.spec_name_en')} className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors bg-white" dir="ltr" /><input type="text" value={spec.name.ar} onChange={(e) => handleArrayChange(setSpecifications, index, 'name.ar', e.target.value)} placeholder={t('productEdit.spec_name_ar')} dir="rtl" className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-end transition-colors bg-white" /></div>
+                  <div className="md:col-span-6 space-y-2"><input type="text" value={spec.value.en} onChange={(e) => handleArrayChange(setSpecifications, index, 'value.en', e.target.value)} placeholder={t('productEdit.spec_val_en')} className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors bg-white" dir="ltr" /><input type="text" value={spec.value.ar} onChange={(e) => handleArrayChange(setSpecifications, index, 'value.ar', e.target.value)} placeholder={t('productEdit.spec_val_ar')} dir="rtl" className="w-full text-sm p-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-end transition-colors bg-white" /></div>
                   <div className="md:col-span-1 flex justify-end"><button type="button" onClick={() => handleArrayRemove(setSpecifications, index)} className="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg transition-colors cursor-pointer"><FaTimes /></button></div>
                 </div>
               ))}
@@ -405,8 +402,8 @@ const ProductEditScreen = () => {
               {features.map((feat, index) => (
                 <div key={index} className="p-5 bg-gray-50 border border-gray-200 rounded-2xl relative group text-start">
                   <button type="button" onClick={() => handleArrayRemove(setFeatures, index)} className="absolute -top-3 -end-3 bg-white border border-red-200 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors cursor-pointer"><FaTimes /></button>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3"><input type="text" value={feat.icon} onChange={(e) => handleArrayChange(setFeatures, index, 'icon', e.target.value)} placeholder={t('productEdit.feat_icon')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary transition-colors md:col-span-1 outline-none bg-white" dir="ltr" /><input type="text" value={feat.title.en} onChange={(e) => handleArrayChange(setFeatures, index, 'title.en', e.target.value)} placeholder={t('productEdit.feat_title_en')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary transition-colors outline-none bg-white" dir="ltr" /><input type="text" value={feat.title.ar} onChange={(e) => handleArrayChange(setFeatures, index, 'title.ar', e.target.value)} placeholder={t('productEdit.feat_title_ar')} dir="rtl" className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary transition-colors text-end outline-none bg-white" /></div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><input type="text" value={feat.description.en} onChange={(e) => handleArrayChange(setFeatures, index, 'description.en', e.target.value)} placeholder={t('productEdit.feat_desc_en')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary transition-colors outline-none bg-white" dir="ltr" /><input type="text" value={feat.description.ar} onChange={(e) => handleArrayChange(setFeatures, index, 'description.ar', e.target.value)} placeholder={t('productEdit.feat_desc_ar')} dir="rtl" className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary transition-colors text-end outline-none bg-white" /></div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3"><input type="text" value={feat.icon} onChange={(e) => handleArrayChange(setFeatures, index, 'icon', e.target.value)} placeholder={t('productEdit.feat_icon')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors md:col-span-1 outline-none bg-white" dir="ltr" /><input type="text" value={feat.title.en} onChange={(e) => handleArrayChange(setFeatures, index, 'title.en', e.target.value)} placeholder={t('productEdit.feat_title_en')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors outline-none bg-white" dir="ltr" /><input type="text" value={feat.title.ar} onChange={(e) => handleArrayChange(setFeatures, index, 'title.ar', e.target.value)} placeholder={t('productEdit.feat_title_ar')} dir="rtl" className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-end outline-none bg-white" /></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><input type="text" value={feat.description.en} onChange={(e) => handleArrayChange(setFeatures, index, 'description.en', e.target.value)} placeholder={t('productEdit.feat_desc_en')} className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors outline-none bg-white" dir="ltr" /><input type="text" value={feat.description.ar} onChange={(e) => handleArrayChange(setFeatures, index, 'description.ar', e.target.value)} placeholder={t('productEdit.feat_desc_ar')} dir="rtl" className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors text-end outline-none bg-white" /></div>
                 </div>
               ))}
             </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+// filepath: frontend/src/pages/admin/AdminProductsScreen.jsx
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,11 +8,12 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import Button from '../../components/ui/Button';
-import Pagination from '../../components/Pagination'; // 🌟 
+import CustomSelect from '../../components/ui/CustomSelect';
+import Pagination from '../../components/Pagination';
 import {
   FaEdit, FaTrash, FaPlus, FaBoxOpen, FaExclamationCircle,
   FaFilter, FaTags, FaChartLine, FaSearch, FaTimes,
-  FaChevronDown, FaCopy, FaCheckCircle, FaExclamationTriangle
+  FaCopy, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
 
 const AdminProductsScreen = () => {
@@ -28,8 +30,6 @@ const AdminProductsScreen = () => {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [deleteModal, setDeleteModal] = useState({ show: false, productId: null });
@@ -38,14 +38,6 @@ const AdminProductsScreen = () => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsCategoryDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => { setKeyword(searchInput); setPage(1); }, 400);
@@ -124,6 +116,14 @@ const AdminProductsScreen = () => {
 
   const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
+  const categoryOptions = [
+    { value: '', label: t('admin.all_categories', 'جميع التصنيفات') },
+    ...categories.map((cat) => ({
+      value: cat._id,
+      label: getDBText(cat.name)
+    }))
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 relative">
       <div className={`fixed bottom-10 inset-s-1/2 transform -translate-x-1/2 rtl:translate-x-1/2 z-50 transition-all duration-500 ease-out ${ toast.show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95 pointer-events-none' }`}>
@@ -189,30 +189,26 @@ const AdminProductsScreen = () => {
             {searchInput && <button type="button" onClick={() => setSearchInput('')} className="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-gray-100 p-1 rounded-full transition-colors cursor-pointer"><FaTimes className="text-xs" /></button>}
           </form>
 
+          {/* 🌟 قائمة اختيار التصنيفات المفلترة باستخدام CustomSelect */}
           {categories.length > 0 && (
-            <div className="relative w-full md:w-64" ref={dropdownRef}>
-              <div onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)} className={`w-full px-4 py-3 bg-white border rounded-xl flex items-center justify-between cursor-pointer transition-all shadow-sm ${ isCategoryDropdownOpen ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 hover:border-gray-300' }`}>
+            <CustomSelect
+              options={categoryOptions}
+              value={selectedCategoryId}
+              onChange={(val) => {
+                setSelectedCategoryId(val);
+                setPage(1);
+              }}
+              className="w-full md:w-64"
+              triggerClassName="!bg-white !py-3 shadow-sm"
+              renderValue={(opt) => (
                 <div className="flex items-center gap-2">
-                  <FaFilter className="text-primary" />
+                  <FaFilter className="text-primary shrink-0 text-sm" />
                   <span className="text-sm font-bold text-dark truncate">
-                    {selectedCategoryId ? getDBText(categories.find(c => c._id === selectedCategoryId)?.name) : t('admin.all_categories', 'جميع التصنيفات')}
+                    {opt?.label}
                   </span>
                 </div>
-                <FaChevronDown className={`text-gray-400 text-xs transition-transform duration-300 ${ isCategoryDropdownOpen ? 'rotate-180 text-primary' : '' }`} />
-              </div>
-              {isCategoryDropdownOpen && (
-                <div className="absolute z-20 top-full inset-s-0 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-fade-in-up max-h-60 overflow-y-auto text-start">
-                  <div onClick={() => { setSelectedCategoryId(''); setPage(1); setIsCategoryDropdownOpen(false); }} className={`px-4 py-3 cursor-pointer text-sm font-bold transition-all border-s-4 ${ selectedCategoryId === '' ? 'bg-primary/5 text-primary border-primary' : 'text-gray-600 hover:bg-primary/5 hover:text-primary border-transparent' }`}>
-                    {t('admin.all_categories', 'جميع التصنيفات')}
-                  </div>
-                  {categories.map((cat) => (
-                    <div key={cat._id} onClick={() => { setSelectedCategoryId(cat._id); setPage(1); setIsCategoryDropdownOpen(false); }} className={`px-4 py-3 cursor-pointer text-sm font-bold transition-all border-s-4 ${ selectedCategoryId === cat._id ? 'bg-primary/5 text-primary border-primary' : 'text-gray-600 hover:bg-primary/5 hover:text-primary border-transparent' }`}>
-                      {getDBText(cat.name)}
-                    </div>
-                  ))}
-                </div>
               )}
-            </div>
+            />
           )}
         </div>
 

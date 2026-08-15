@@ -1,3 +1,4 @@
+// filepath: frontend/src/pages/ShippingScreen.jsx
 import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -5,7 +6,25 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import CheckoutSteps from '../components/CheckoutSteps';
+import CustomSelect from '../components/ui/CustomSelect';
+import Button from '../components/ui/Button';
 import { FaShippingFast, FaArrowRight, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
+
+const countryOptions = [
+  { value: '+963', flag: '🇸🇾', name: 'Syria' },
+  { value: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { value: '+971', flag: '🇦🇪', name: 'UAE' },
+  { value: '+20', flag: '🇪🇬', name: 'Egypt' },
+  { value: '+962', flag: '🇯🇴', name: 'Jordan' },
+  { value: '+961', flag: '🇱🇧', name: 'Lebanon' },
+  { value: '+964', flag: '🇮🇶', name: 'Iraq' },
+  { value: '+965', flag: '🇰🇼', name: 'Kuwait' },
+  { value: '+974', flag: '🇶🇦', name: 'Qatar' },
+  { value: '+973', flag: '🇧🇭', name: 'Bahrain' },
+  { value: '+968', flag: '🇴🇲', name: 'Oman' },
+  { value: '+1', flag: '🇺🇸', name: 'USA/Canada' },
+  { value: '+44', flag: '🇬🇧', name: 'UK' },
+];
 
 const ShippingScreen = () => {
   const { shippingAddress, saveShippingAddress, cartItems } = useContext(CartContext);
@@ -19,7 +38,7 @@ const ShippingScreen = () => {
   const initialCode = initialPhoneParts.length > 1 ? initialPhoneParts[0] : '+963';
   const initialNumber = initialPhoneParts.length > 1 ? initialPhoneParts.slice(1).join(' ') : (shippingAddress?.phoneNumber || defaultAddress?.phone || '');
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({
     defaultValues: {
       fullName: shippingAddress?.fullName || userInfo?.name || '',
       email: shippingAddress?.email || userInfo?.email || '',
@@ -32,6 +51,7 @@ const ShippingScreen = () => {
     }
   });
 
+  const selectedCountryCode = watch('countryCode');
   const [isDetecting, setIsDetecting] = useState(false);
 
   useEffect(() => {
@@ -134,24 +154,30 @@ const ShippingScreen = () => {
               </div>
             </div>
 
-            <div className={`relative flex items-center border rounded-xl bg-white focus-within:ring-2 transition-all duration-300 ${ errors.phone ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-gray-200 focus-within:border-primary focus-within:ring-primary/20' }`}>
-              <select
-                {...register("countryCode")}
-                className="ps-4 pe-6 py-4 bg-transparent text-sm text-dark font-bold focus:outline-none appearance-none border-e border-gray-100 cursor-pointer"
+            <div className={`relative flex items-center border rounded-xl bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-300 ${ errors.phone ? 'border-red-500 focus-within:border-red-500 focus-within:ring-red-500/20' : 'border-gray-200' }`}>
+
+              <CustomSelect
+                options={countryOptions}
+                value={selectedCountryCode}
+                onChange={(val) => setValue('countryCode', val)}
+                triggerClassName="!border-0 !bg-gray-50/80 hover:!bg-gray-100 !rounded-s-xl !rounded-e-none border-e border-gray-100 !py-4"
                 dir="ltr"
-              >
-                <option value="+963">🇸🇾 +963</option>
-                <option value="+966">🇸🇦 +966</option>
-                <option value="+971">🇦🇪 +971</option>
-                <option value="+20">🇪🇬 +20</option>
-                <option value="+962">🇯🇴 +962</option>
-                <option value="+961">🇱🇧 +961</option>
-                <option value="+964">🇮🇶 +964</option>
-                <option value="+965">🇰🇼 +965</option>
-                <option value="+974">🇶🇦 +974</option>
-                <option value="+973">🇧🇭 +973</option>
-                <option value="+968">🇴🇲 +968</option>
-              </select>
+                renderValue={(opt) => (
+                  <div className="flex items-center gap-1.5 font-mono text-xs">
+                    <span className="text-base">{opt?.flag}</span>
+                    <span>{opt?.value}</span>
+                  </div>
+                )}
+                renderOption={(opt) => (
+                  <div className="flex items-center justify-between w-full" dir="ltr">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{opt.flag}</span>
+                      <span>{opt.name}</span>
+                    </div>
+                    <span className="font-mono text-gray-400">{opt.value}</span>
+                  </div>
+                )}
+              />
 
               <div className="relative flex-1 group">
                 <input
@@ -171,7 +197,7 @@ const ShippingScreen = () => {
                 type="button"
                 onClick={detectLocationHandler}
                 disabled={isDetecting}
-                className="flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-dark px-4 py-2.5 rounded-xl font-bold text-sm hover:border-dark hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 focus:outline-none shadow-sm"
+                className="flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-dark px-4 py-2.5 rounded-xl font-bold text-sm hover:border-primary hover:text-primary hover:bg-primary/5 transition-all duration-300 disabled:opacity-50 focus:outline-none shadow-sm cursor-pointer"
               >
                 {isDetecting ? <FaSpinner className="animate-spin text-primary" /> : <FaMapMarkerAlt className="text-primary" />}
                 {isDetecting ? t('shipping.detecting') : t('shipping.detect_location')}
@@ -217,9 +243,17 @@ const ShippingScreen = () => {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-black text-lg hover:bg-orange-600 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 mt-8 flex items-center justify-center gap-2 disabled:opacity-70">
-            {t('shipping.continue_payment')} <FaArrowRight className="rtl:rotate-180" />
-          </button>
+          {/* 🌟 تم الإصلاح: الزر الآن يتبع المكون الموحد لمطابقة نمط التحول للون الكحلي عند الهوفر */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            className="mt-8"
+            rightIcon={<FaArrowRight className="rtl:rotate-180" />}
+          >
+            {t('shipping.continue_payment')}
+          </Button>
         </form>
       </div>
     </div>

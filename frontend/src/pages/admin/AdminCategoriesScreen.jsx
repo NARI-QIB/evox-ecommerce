@@ -1,6 +1,7 @@
+// filepath: frontend/src/pages/admin/AdminCategoriesScreen.jsx
 import { useState, useContext } from 'react';
-import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
@@ -8,8 +9,8 @@ import Breadcrumb from '../../components/Breadcrumb';
 import Button from '../../components/ui/Button';
 import {
   FaEdit, FaTrash, FaPlus, FaTags, FaExclamationCircle,
-  FaTimes, FaBoxOpen, FaChartLine, FaImage, FaUpload,
-  FaSpinner, FaCheckCircle, FaExclamationTriangle
+  FaTimes, FaImage, FaUpload, FaSpinner, FaCheckCircle, FaExclamationTriangle,
+  FaChartLine, FaBoxOpen
 } from 'react-icons/fa';
 
 const AdminCategoriesScreen = () => {
@@ -21,19 +22,15 @@ const AdminCategoriesScreen = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState(null);
-
   const [nameEn, setNameEn] = useState('');
   const [nameAr, setNameAr] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
   const [descriptionAr, setDescriptionAr] = useState('');
-
   const [thumbnail, setThumbnail] = useState('');
   const [bannerDesktop, setBannerDesktop] = useState('');
   const [bannerMobile, setBannerMobile] = useState('');
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [deleteModal, setDeleteModal] = useState({ show: false, categoryId: null, categoryName: '' });
 
@@ -65,6 +62,7 @@ const AdminCategoriesScreen = () => {
       await axios.delete(`/api/categories/${ deleteModal.categoryId }`, config);
       showToast(t('admin.category_deleted'), 'success');
       queryClient.invalidateQueries(['categoriesList']);
+      queryClient.invalidateQueries(['categories']);
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to delete category', 'error');
     } finally {
@@ -93,23 +91,18 @@ const AdminCategoriesScreen = () => {
     setIsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  const closeModal = () => setIsModalOpen(false);
 
   const uploadFileHandler = async (e, setImageState) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append('image', file);
     formData.append('folder', 'categories');
-
     setUploadingImage(true);
     try {
       const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${ userInfo.token }` } };
       const { data } = await axios.post('/api/upload/single', formData, config);
-
       let finalPath = data.image || (data.images && data.images[0]);
       if (finalPath) {
         finalPath = finalPath.replace(/\\/g, '/');
@@ -126,13 +119,7 @@ const AdminCategoriesScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
-
-    const payload = {
-      name: { en: nameEn, ar: nameAr },
-      description: { en: descriptionEn, ar: descriptionAr },
-      thumbnail, bannerDesktop, bannerMobile
-    };
-
+    const payload = { name: { en: nameEn, ar: nameAr }, description: { en: descriptionEn, ar: descriptionAr }, thumbnail, bannerDesktop, bannerMobile };
     try {
       const config = { headers: { Authorization: `Bearer ${ userInfo.token }` } };
       if (editMode) {
@@ -143,6 +130,7 @@ const AdminCategoriesScreen = () => {
         showToast(t('admin.category_created'), 'success');
       }
       queryClient.invalidateQueries(['categoriesList']);
+      queryClient.invalidateQueries(['categories']);
       closeModal();
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to save', 'error');
@@ -177,16 +165,10 @@ const AdminCategoriesScreen = () => {
               <FaTrash className="text-3xl" />
             </div>
             <h3 className="text-2xl font-black text-dark mb-2">{t('admin.delete_category')}</h3>
-            <p className="text-gray-500 font-medium mb-8">
-              {t('admin.delete_category_confirm')} "{deleteModal.categoryName}"؟
-            </p>
+            <p className="text-gray-500 font-medium mb-8">{t('admin.delete_category_confirm')} "{deleteModal.categoryName}"؟</p>
             <div className="flex gap-3">
-              <Button onClick={() => setDeleteModal({ show: false })} disabled={isProcessing} variant="outline" size="md" className="flex-1">
-                {t('profileDetails.cancel')}
-              </Button>
-              <Button onClick={confirmDeleteHandler} isLoading={isProcessing} variant="danger" size="md" className="flex-1">
-                {t('admin.yes_delete')}
-              </Button>
+              <Button onClick={() => setDeleteModal({ show: false, categoryId: null, categoryName: '' })} disabled={isProcessing} variant="soft" size="md" className="flex-1">{t('profileDetails.cancel')}</Button>
+              <Button onClick={confirmDeleteHandler} isLoading={isProcessing} variant="danger" size="md" className="flex-1">{t('admin.yes_delete')}</Button>
             </div>
           </div>
         </div>
@@ -205,13 +187,11 @@ const AdminCategoriesScreen = () => {
               <FaTags className="text-primary" /> {t('adminLayout.categories')}
             </h1>
           </div>
-          <Button onClick={openCreateModal} variant="primary" size="md" leftIcon={<FaPlus />}>
-            {t('admin.new_category')}
-          </Button>
+          <Button onClick={openCreateModal} variant="primary" size="md" leftIcon={<FaPlus />}>{t('admin.new_category')}</Button>
         </div>
 
         {isError && (
-          <div className="mb-8 p-4 bg-red-50 border-s-4 border-red-500 rounded-e-xl flex items-center gap-3">
+          <div className="mb-8 p-4 bg-red-50 border-s-4 border-red-500 rounded-e-xl flex items-center gap-3 animate-fade-in-up">
             <FaExclamationCircle className="text-red-500 text-lg shrink-0" />
             <span className="text-red-700 font-bold">{error?.response?.data?.message || error.message}</span>
           </div>
@@ -223,7 +203,7 @@ const AdminCategoriesScreen = () => {
           </div>
         ) : (
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in-up">
-            <div className="overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-start border-collapse">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100 text-xs uppercase tracking-wider text-gray-400">
@@ -238,7 +218,6 @@ const AdminCategoriesScreen = () => {
                     const catNameEn = category.name?.en || category.name || '';
                     const catNameAr = category.name?.ar || '';
                     const isUncategorized = category.isDefault === true;
-
                     return (
                       <tr key={category._id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="p-4 text-start">
@@ -252,24 +231,27 @@ const AdminCategoriesScreen = () => {
                         </td>
                         <td className="p-4 text-sm text-gray-500 max-w-xs truncate text-start">{getDBText(category.description, 'No description')}</td>
                         <td className="p-4">
+                          {/* 🌟 أزرار الحركة المطابقة لشاشة المنتجات تماماً */}
                           <div className="flex items-center justify-center gap-2">
                             <Button
                               onClick={() => openEditModal(category)}
                               disabled={isUncategorized}
-                              variant="ghost"
+                              variant="soft"
                               size="sm"
-                              className="w-8 h-8 !p-0 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg"
+                              className="w-10 h-10 !p-0 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400"
+                              title={isUncategorized ? t('admin.edit_category_default_err') : t('admin.edit_category')}
                             >
-                              <FaEdit />
+                              <FaEdit className="text-sm" />
                             </Button>
                             <Button
                               onClick={() => requestDelete(category)}
                               disabled={isUncategorized}
-                              variant="ghost"
+                              variant="soft"
                               size="sm"
-                              className="w-8 h-8 !p-0 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg"
+                              className="w-10 h-10 !p-0 bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400"
+                              title={isUncategorized ? t('admin.delete_category_default_err') : t('admin.delete_category')}
                             >
-                              <FaTrash />
+                              <FaTrash className="text-sm" />
                             </Button>
                           </div>
                         </td>
@@ -278,6 +260,54 @@ const AdminCategoriesScreen = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="lg:hidden flex flex-col divide-y divide-gray-100">
+              {categories.map((category) => {
+                const isUncategorized = category.isDefault === true;
+                return (
+                  <div key={category._id} className="p-5 hover:bg-gray-50/50 transition-colors flex flex-col gap-4">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex gap-3 items-start flex-1 min-w-0">
+                        <img src={category.thumbnail || '/images/hero-bg.webp'} alt="cat" className="w-12 h-12 rounded-xl object-cover bg-gray-100 border border-gray-100 shrink-0" />
+                        <div className="flex flex-col text-start min-w-0">
+                          <span className="font-extrabold text-base text-dark truncate block">{getDBText(category.name)}</span>
+                          <span className="text-xs text-gray-400 font-medium mt-1">Category ID: {category._id.substring(18)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500 leading-relaxed italic text-start">
+                      "{getDBText(category.description, 'No description')}"
+                    </div>
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                      <span className={`px-3 py-1 rounded-lg text-xs font-black ${ isUncategorized ? 'bg-gray-100 text-gray-500' : 'bg-primary/10 text-primary' }`}>
+                        {isUncategorized ? t('admin.default_category', 'Default Category') : t('admin.custom_category', 'Custom Category')}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => openEditModal(category)}
+                          disabled={isUncategorized}
+                          variant="soft"
+                          size="sm"
+                          className="w-9 h-9 !p-0 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400"
+                        >
+                          <FaEdit className="text-sm" />
+                        </Button>
+                        <Button
+                          onClick={() => requestDelete(category)}
+                          disabled={isUncategorized}
+                          variant="soft"
+                          size="sm"
+                          className="w-9 h-9 !p-0 bg-red-50 text-red-500 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400"
+                        >
+                          <FaTrash className="text-sm" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {categories.length === 0 && <div className="p-8 text-center text-gray-500 font-medium">{t('admin.no_categories_found', 'No categories found.')}</div>}
             </div>
           </div>
         )}
@@ -292,60 +322,38 @@ const AdminCategoriesScreen = () => {
               </h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"><FaTimes className="text-xl" /></button>
             </div>
-
             <div className="overflow-y-auto grow">
               <form onSubmit={submitHandler} className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-start">
                   <div className="relative group">
                     <input type="text" id="nameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required className={inputStyle} placeholder=" " dir="ltr" />
-                    <label htmlFor="nameEn" className={labelStyle}>
-                      {t('admin.category_name_en', 'Category Name (EN) *')}
-                    </label>
+                    <label htmlFor="nameEn" className={labelStyle}>{t('admin.category_name_en', 'Category Name (EN) *')}</label>
                   </div>
                   <div className="relative group">
                     <input type="text" id="nameAr" value={nameAr} onChange={(e) => setNameAr(e.target.value)} dir="rtl" className={`${ inputStyle } text-end`} placeholder=" " />
-                    <label htmlFor="nameAr" className={labelStyle}>
-                      {t('admin.category_name_ar', 'Category Name (AR)')}
-                    </label>
+                    <label htmlFor="nameAr" className={labelStyle}>{t('admin.category_name_ar', 'Category Name (AR)')}</label>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-start">
                   <div className="relative group">
                     <textarea id="descriptionEn" value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} rows="3" className={`${ inputStyle } resize-none`} placeholder=" " dir="ltr"></textarea>
-                    <label htmlFor="descriptionEn" className={labelStyle}>
-                      {t('admin.category_desc_en', 'Category Description (EN)')}
-                    </label>
+                    <label htmlFor="descriptionEn" className={labelStyle}>{t('admin.category_desc_en', 'Category Description (EN)')}</label>
                   </div>
                   <div className="relative group">
                     <textarea id="descriptionAr" value={descriptionAr} onChange={(e) => setDescriptionAr(e.target.value)} rows="3" dir="rtl" className={`${ inputStyle } resize-none text-end`} placeholder=" "></textarea>
-                    <label htmlFor="descriptionAr" className={labelStyle}>
-                      {t('admin.category_desc_ar', 'Category Description (AR)')}
-                    </label>
+                    <label htmlFor="descriptionAr" className={labelStyle}>{t('admin.category_desc_ar', 'Category Description (AR)')}</label>
                   </div>
                 </div>
-
                 <div className="p-5 bg-blue-50/40 rounded-2xl border border-blue-100 space-y-5 text-start">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-dark flex items-center gap-2"><FaImage className="text-primary" /> {t('admin.category_images')}</h3>
                     {uploadingImage && <span className="text-sm font-bold text-primary flex items-center gap-2 animate-pulse"><FaSpinner className="animate-spin" /> {t('adminSettings.uploading', 'Uploading...')}</span>}
                   </div>
-
                   {imageFields.map((field, i) => (
                     <div key={i} className="flex flex-col sm:flex-row gap-3 items-stretch">
                       <div className="relative group flex-1">
-                        <input
-                          type="text"
-                          id={field.id}
-                          value={field.value}
-                          onChange={(e) => field.setter(e.target.value)}
-                          className={`${ inputStyle } text-start`}
-                          placeholder=" "
-                          dir="ltr"
-                        />
-                        <label htmlFor={field.id} className={labelStyle}>
-                          {field.label}
-                        </label>
+                        <input type="text" id={field.id} value={field.value} onChange={(e) => field.setter(e.target.value)} className={`${ inputStyle } text-start`} placeholder=" " dir="ltr" />
+                        <label htmlFor={field.id} className={labelStyle}>{field.label}</label>
                       </div>
                       <label className="flex items-center justify-center px-6 py-2 bg-white border-2 border-dashed border-gray-300 rounded-xl font-bold hover:bg-primary/5 hover:border-primary hover:text-primary cursor-pointer transition-all">
                         <FaUpload className="me-2" /> {t('adminSettings.browse')}
@@ -354,14 +362,9 @@ const AdminCategoriesScreen = () => {
                     </div>
                   ))}
                 </div>
-
                 <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-50">
-                  <Button type="button" onClick={closeModal} variant="outline" size="md" className="w-full sm:w-auto">
-                    {t('profileDetails.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={uploadingImage} isLoading={isProcessing} variant="primary" size="md" className="w-full sm:w-auto flex-1">
-                    {t('profileDetails.save_changes')}
-                  </Button>
+                  <Button type="button" onClick={closeModal} variant="outline" size="md" className="w-full sm:w-auto">{t('profileDetails.cancel')}</Button>
+                  <Button type="submit" disabled={uploadingImage} isLoading={isProcessing} variant="primary" size="md" className="w-full sm:w-auto flex-1">{t('profileDetails.save_changes')}</Button>
                 </div>
               </form>
             </div>

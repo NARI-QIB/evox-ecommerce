@@ -3,9 +3,9 @@ const express = require('express');
 const router = express.Router();
 const {
   getProducts, getProductById, createProduct, updateProduct, deleteProduct,
-  createProductReview, updateProductReview, deleteProductReview, // 🌟 الدوال الجديدة
+  createProductReview, updateProductReview, deleteProductReview,
   getProductReviews, getTopProducts, getCategories, getRelatedProducts,
-  getPersonalizedProducts, getFilters
+  getPersonalizedProducts, getFilters, getProductsByStyle // 🌟 Added getProductsByStyle
 } = require('../controllers/productController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -14,13 +14,16 @@ router.route('/top').get(getTopProducts);
 router.route('/categories').get(getCategories);
 router.route('/filters').get(getFilters);
 router.route('/personalized').get(getPersonalizedProducts);
+
+// 🌟 NEW: Route to get products by styleCode for color variants
+router.get('/style/:styleCode', getProductsByStyle);
+
 router.route('/:id/related').get(getRelatedProducts);
 
 router.route('/:id/reviews')
   .get(getProductReviews)
   .post(protect, createProductReview);
 
-// 🌟 مسار جديد ومحمي للتعديل وحذف التقييمات الفردية
 router.route('/:id/reviews/:reviewId')
   .put(protect, updateProductReview)
   .delete(protect, deleteProductReview);

@@ -1,5 +1,5 @@
 // filepath: frontend/src/pages/admin/AdminOrderDetailsScreen.jsx
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,10 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import Button from '../../components/ui/Button';
+import CustomSelect from '../../components/ui/CustomSelect';
 import {
   FaBoxOpen, FaExclamationCircle, FaUser, FaShippingFast,
   FaCreditCard, FaClipboardList, FaSave, FaArrowLeft, FaArrowRight,
-  FaStickyNote, FaChartLine, FaReceipt, FaChevronDown,
+  FaStickyNote, FaChartLine, FaReceipt,
   FaCheckCircle, FaTimesCircle, FaQuestionCircle, FaSyncAlt
 } from 'react-icons/fa';
 
@@ -32,8 +33,6 @@ const AdminOrderDetailsScreen = () => {
   const [isUpdatingNotes, setIsUpdatingNotes] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
 
-  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [paymentModal, setPaymentModal] = useState({ show: false, newStatus: null });
 
@@ -41,12 +40,6 @@ const AdminOrderDetailsScreen = () => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setIsStatusDropdownOpen(false); };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const { data: order, isLoading, isError, error } = useQuery({
     queryKey: ['adminOrder', orderId],
@@ -128,6 +121,11 @@ const AdminOrderDetailsScreen = () => {
     }
   };
 
+  const statusOptions = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((s) => ({
+    value: s,
+    label: t(`adminOrderDetails.status_${ s.toLowerCase() }`)
+  }));
+
   if (isError) {
     return (
       <div className="p-4 bg-red-50 border-s-4 border-red-500 m-8 flex items-center gap-3">
@@ -188,7 +186,6 @@ const AdminOrderDetailsScreen = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* Customer Info */}
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between">
                   <h2 className="text-xl font-bold flex items-center gap-2"><FaUser className="text-primary" /> {t('adminOrderDetails.customer_shipping')}</h2>
@@ -207,7 +204,6 @@ const AdminOrderDetailsScreen = () => {
                 </div>
               </div>
 
-              {/* Payment Method */}
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50"><h2 className="text-xl font-bold flex items-center gap-2"><FaCreditCard className="text-primary" /> {t('adminOrderDetails.payment_method')}</h2></div>
                 <div className="p-6 flex flex-col sm:flex-row justify-between gap-4 text-start">
@@ -222,7 +218,6 @@ const AdminOrderDetailsScreen = () => {
                 </div>
               </div>
 
-              {/* Items List */}
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50"><h2 className="text-xl font-bold flex items-center gap-2"><FaBoxOpen className="text-primary" /> {t('adminOrderDetails.order_items')}</h2></div>
                 <div className="p-6 space-y-4 text-start">
@@ -244,7 +239,6 @@ const AdminOrderDetailsScreen = () => {
               </div>
             </div>
 
-            {/* Sidebar Controls */}
             <div className="space-y-8 text-start">
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50 rounded-t-3xl"><h2 className="text-xl font-bold flex items-center gap-2"><FaClipboardList className="text-primary" /> {t('adminOrderDetails.manage_status')}</h2></div>
@@ -258,28 +252,28 @@ const AdminOrderDetailsScreen = () => {
                   </div>
                   <div className="space-y-3 pt-4 border-t border-gray-100">
                     <label className="block text-sm font-bold text-dark">{t('adminOrderDetails.update_status')}</label>
-                    <div className="relative" ref={dropdownRef}>
-                      <div onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)} className="px-5 py-3.5 bg-gray-50 border-2 border-gray-200 hover:border-primary transition-all duration-300 rounded-xl cursor-pointer flex justify-between items-center group">
-                        <span className="font-bold text-dark group-hover:text-primary transition-colors flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${ status ? getStatusDotColor(status) : 'bg-gray-300' }`}></div>
-                          {status ? t(`adminOrderDetails.status_${ status.toLowerCase() }`) : t('adminOrderDetails.select_status')}
-                        </span>
-                        <FaChevronDown className={`text-gray-400 transition-transform duration-300 ${ isStatusDropdownOpen ? 'rotate-180 text-primary' : '' }`} />
-                      </div>
 
-                      <div className={`absolute z-50 top-full start-0 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 origin-top ${ isStatusDropdownOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none' }`}>
-                        {['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((opt) => (
-                          <div
-                            key={opt}
-                            onClick={() => { setStatus(opt); setIsStatusDropdownOpen(false); }}
-                            className={`px-5 py-3.5 cursor-pointer font-bold transition-all duration-200 flex items-center gap-3 ${ status === opt ? 'bg-blue-50 text-primary' : 'hover:bg-gray-50 text-gray-600 hover:text-dark' }`}
-                          >
-                            <div className={`w-2.5 h-2.5 rounded-full ${ getStatusDotColor(opt) }`}></div>
-                            {t(`adminOrderDetails.status_${ opt.toLowerCase() }`)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    {/* 🌟 قائمة خيارات حالة الطلب المحدثة بالمكون الموحد CustomSelect */}
+                    <CustomSelect
+                      options={statusOptions}
+                      value={status}
+                      onChange={(val) => setStatus(val)}
+                      placeholder={t('adminOrderDetails.select_status')}
+                      triggerClassName="!bg-gray-50 hover:!bg-white !py-3.5"
+                      renderValue={(opt) => (
+                        <div className="flex items-center gap-2 font-bold text-dark">
+                          <div className={`w-2.5 h-2.5 rounded-full ${ opt ? getStatusDotColor(opt.value) : 'bg-gray-300' }`}></div>
+                          <span>{opt ? opt.label : t('adminOrderDetails.select_status')}</span>
+                        </div>
+                      )}
+                      renderOption={(opt) => (
+                        <div className="flex items-center gap-2.5 font-bold">
+                          <div className={`w-2.5 h-2.5 rounded-full ${ getStatusDotColor(opt.value) }`}></div>
+                          <span>{opt.label}</span>
+                        </div>
+                      )}
+                    />
+
                     <Button
                       onClick={updateStatusHandler}
                       disabled={status === order.status}

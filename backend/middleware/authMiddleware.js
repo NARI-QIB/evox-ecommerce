@@ -5,7 +5,14 @@ const User = require('../models/userModel');
 const AppError = require('../utils/AppError');
 
 const protect = asyncHandler(async (req, res, next) => {
-  let token = req.cookies.jwt;
+  let token;
+
+  // 🌟 دعم جلب التوكن من الـ Cookies أو من הـ Authorization Bearer Header
+  if (req.cookies && req.cookies.jwt) {
+    token = req.cookies.jwt;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
   if (token) {
     try {
@@ -29,7 +36,7 @@ const protect = asyncHandler(async (req, res, next) => {
       throw new AppError('Not authorized, token failed or expired', 401);
     }
   } else {
-    throw new AppError('Not authorized, no token found in cookies', 401);
+    throw new AppError('Not authorized, no token found in cookies or headers', 401);
   }
 });
 

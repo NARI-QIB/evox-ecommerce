@@ -44,8 +44,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(mongoSanitize());
 
-// 🌟 الحماية الشاملة (Bulletproof Fallback): 
-// السيرفر لن ينهار إذا لم تكن الحزم مثبتة، بل سيتجاوزها ويعمل بشكل طبيعي
 let RedisStore;
 try {
   const m = require('rate-limit-redis');
@@ -70,7 +68,6 @@ const authLimiter = rateLimit({ store: getRedisStore(), windowMs: 60 * 60 * 1000
 const aiLimiter = rateLimit({ store: getRedisStore(), windowMs: 60 * 1000, max: 5, message: { message: 'AI usage limit reached. Please wait a minute before asking more questions.' }});
 const otpLimiter = rateLimit({ store: getRedisStore(), windowMs: 15 * 60 * 1000, max: 5, message: { message: 'Too many verification attempts. Please request a new code.' }});
 
-app.get('/', (req, res) => { res.json({ "message": "Sports Store API Running Securely" }); });
 app.get('/api/csrf-token', generateCsrfToken);
 
 app.use('/api/', apiLimiter); 
@@ -96,10 +93,23 @@ app.use('/api/settings', settingRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 🌟 تقديم الفرونت إند في بيئة الإنتاج Production عند الدمج
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res, next) => {
+    if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
+      return next();
+    }
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => { res.json({ "message": "Sports Store API Running Securely" }); });
+}
+
 app.use(notFound);
 app.use(errorHandler);
 
-// 🌟 أتمتة المهام (Cron Jobs) مع حماية ضد التوقف
 let cron;
 try { cron = require('node-cron'); } catch (e) {
   console.warn("⚠️ 'node-cron' is not installed. Background jobs will not run automatically.");

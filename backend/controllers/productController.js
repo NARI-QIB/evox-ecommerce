@@ -59,13 +59,20 @@ const getProducts = asyncHandler(async (req, res) => {
 
   let filter = { isDeleted: false };
 
-  if (req.query.category) filter.category = req.query.category;
+  // 🌟 تم الإصلاح: التعامل مع معرف القسم بشكل نظيف وآمن
+  if (req.query.category) {
+    if (mongoose.Types.ObjectId.isValid(req.query.category)) {
+      filter.category = new mongoose.Types.ObjectId(req.query.category);
+    } else {
+      filter.category = req.query.category;
+    }
+  }
+
   if (req.query.styleCode) filter.styleCode = req.query.styleCode;
   if (req.query.brands) filter.brand = { $in: req.query.brands.split(',') };
   if (req.query.subCategories) filter.subCategory = { $in: req.query.subCategories.split(',') };
   if (req.query.options) filter['selectableOptions.values.en'] = { $in: req.query.options.split(',') };
 
-  // 🌟 إصلاح كود البحث لمنع انهيار MongoDB عند الدمج بين $text و $or
   if (keywordStr) {
     if (keywordStr.match(/^[0-9a-fA-F]{24}$/)) {
       filter._id = keywordStr;
@@ -111,9 +118,25 @@ const getProducts = asyncHandler(async (req, res) => {
 });
 
 const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ _id: req.params.id, isDeleted: false }).populate('category', 'name');
+  // 🌟 تم الإصلاح: عمل populate للـ reviews لإتاحة التقييمات في استجابة الفردية
+  const product = await Product.findOne({ _id: req.params.id, isDeleted: false })
+    .populate('category', 'name')
+    .populate('reviews');
+  
   if (!product) throw new AppError('Product not found', 404);
   res.status(200).json(product);
+});
+
+const getProductsByStyle = asyncHandler(async (req, res) => {
+  const { styleCode } = req.params;
+  if (!styleCode) throw new AppError('Style code is required', 400);
+
+  const products = await Product.find({ 
+    styleCode: styleCode, 
+    isDeleted: false 
+  }).select('image name color styleCode _id');
+
+  res.status(200).json(products);
 });
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -132,7 +155,6 @@ const createProduct = asyncHandler(async (req, res) => {
   res.status(201).json(createdProduct);
 });
 
-// 🌟 منع ثغرة التعديل الجماعي Mass Assignment باستخدام Whitelist
 const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new AppError('Product not found', 404);
@@ -161,6 +183,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   const updatedProduct = await product.save();
   
   Promise.all(orphanedImages.map(img => safeDeleteFile(img))).catch(err => console.error(err));
+  
   res.status(200).json(updatedProduct);
 
   const translatableFields = { 
@@ -173,11 +196,8 @@ const updateProduct = asyncHandler(async (req, res) => {
   };
 
   autoTranslateJson(translatableFields).then(async (translatedFields) => {
-    Object.keys(translatedFields).forEach((key) => { 
-      if (translatedFields[key] !== undefined) { product[key] = translatedFields[key]; } 
-    });
-    await product.save();
-  }).catch(err => console.error("Background Product Translation Error:", err.message));
+    await Product.findByIdAndUpdate(product._id, { $set: translatedFields });
+  }).catch(err => console.error("Background Translation Error:", err.message));
 });
 
 const deleteProduct = asyncHandler(async (req, res) => {
@@ -212,7 +232,6 @@ const createProductReview = asyncHandler(async (req, res) => {
 const updateProductReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
   const review = await Review.findById(req.params.reviewId);
-  
   if (!review) throw new AppError('Review not found', 404);
   if (review.user.toString() !== req.user._id.toString() && !req.user.isAdmin) throw new AppError('Not authorized to update this review', 401);
   
@@ -220,18 +239,15 @@ const updateProductReview = asyncHandler(async (req, res) => {
   review.comment = comment || review.comment;
   
   await review.save();
-
   res.status(200).json({ message: 'Review updated successfully' });
 });
 
 const deleteProductReview = asyncHandler(async (req, res) => {
   const review = await Review.findById(req.params.reviewId);
-  
   if (!review) throw new AppError('Review not found', 404);
   if (review.user.toString() !== req.user._id.toString() && !req.user.isAdmin) throw new AppError('Not authorized to delete this review', 401);
   
   await review.deleteOne();
-
   res.status(200).json({ message: 'Review deleted successfully' });
 });
 
@@ -288,4 +304,9 @@ const getPersonalizedProducts = asyncHandler(async (req, res) => {
   } else { res.status(200).json([]); }
 });
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, updateProductReview, deleteProductReview, getProductReviews, getTopProducts, getCategories, getRelatedProducts, getPersonalizedProducts, getFilters };
+module.exports = { 
+  getProducts, getProductById, createProduct, updateProduct, deleteProduct, 
+  createProductReview, updateProductReview, deleteProductReview, getProductReviews, 
+  getTopProducts, getCategories, getRelatedProducts, getPersonalizedProducts, 
+  getFilters, getProductsByStyle 
+};

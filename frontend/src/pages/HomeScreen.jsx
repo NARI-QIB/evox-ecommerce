@@ -1,6 +1,6 @@
 // filepath: frontend/src/pages/HomeScreen.jsx
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -19,13 +19,11 @@ const fetchHomeData = async () => {
     axios.get('/api/settings')
   ]);
 
-  // 🌟 فلترة قسم "غير مصنف" واستبعاده قبل اقتطاع أول 4 أقسام
   const filteredCategories = catsRes.data.filter(
     (cat) => cat.name?.en?.toLowerCase() !== 'uncategorized'
   );
 
   return {
-    // 🌟 أخذ أول 4 أقسام من الأقسام المفلترة والصالحة للعرض فقط
     categories: filteredCategories.slice(0, 4),
     topProducts: topRes.data,
     settings: settingsRes.data
@@ -44,6 +42,7 @@ const HomeScreen = () => {
 
   const { t } = useTranslation();
   const { getDBText } = useLanguage();
+  const navigate = useNavigate();
 
   const { data: homeData, isLoading: isLoadingHome, isError: isHomeError, error: homeError } = useQuery({
     queryKey: ['homeData'],
@@ -70,6 +69,16 @@ const HomeScreen = () => {
     queryFn: fetchPersonalized,
     enabled: !!userInfo && combinedIdsStr.length > 0,
   });
+
+  // 🌟 معالج النقر الفاخر: يمرر الشاشة بانسيابية إلى قسم المنتجات الرائجة
+  const handleShopNow = () => {
+    const trendingSection = document.getElementById('trending');
+    if (trendingSection) {
+      trendingSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/search');
+    }
+  };
 
   if (isHomeError) {
     return (
@@ -111,7 +120,8 @@ const HomeScreen = () => {
             <p className="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-lg drop-shadow-md leading-relaxed">
               {getDBText(homeData?.settings?.heroSubtitle, t('home.hero_subtitle'))}
             </p>
-            <Button href="#trending" variant="primary" size="lg" rightIcon={<FaArrowRight className="text-sm rtl:rotate-180" />}>
+            {/* 🌟 تم التعديل: ربط الزر بآلية التمرير التفاعلي لعرض المنتجات مباشرةً */}
+            <Button onClick={handleShopNow} variant="primary" size="lg" rightIcon={<FaArrowRight className="text-sm rtl:rotate-180" />}>
               {t('home.shop_now')}
             </Button>
           </div>

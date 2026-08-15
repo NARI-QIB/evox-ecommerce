@@ -1,16 +1,15 @@
+// filepath: backend/controllers/orderController.js
 const asyncHandler = require('../utils/asyncHandler');
 const Order = require('../models/orderModel');
 const User = require('../models/userModel');
 const mongoose = require('mongoose'); 
-const crypto = require('crypto'); // 🌟 استدعاء مكتبة التشفير
+const crypto = require('crypto');
 const { processAndVerifyOrder, restoreInventory, cancelExpiredOrders } = require('../services/orderService');
 const { verifyPayPalPayment } = require('../utils/paypal'); 
 const AppError = require('../utils/AppError');
 const escapeRegex = require('../utils/escapeRegex'); 
 
 const startSafeTransaction = async () => {
-  // للبيئة المحلية (Standalone MongoDB) نقوم بإرجاع null 
-  // لكي يعتمد الكود على التحديثات الذرية العادية بدلاً من الـ Transactions
   if (process.env.NODE_ENV !== 'production' && process.env.MONGO_URI && process.env.MONGO_URI.includes('localhost')) {
       console.warn("⚠️ Bypassing MongoDB Transactions for local development.");
       return null;
@@ -88,7 +87,6 @@ const addGuestOrderItems = asyncHandler(async (req, res) => {
   try {
     orderDetails = await processAndVerifyOrder(orderItems, session);
     
-    // 🌟 توليد رمز سري معقد وآمن لتتبع الطلب
     const guestTrackingToken = crypto.randomBytes(32).toString('hex');
 
     const order = new Order({
@@ -108,7 +106,6 @@ const addGuestOrderItems = asyncHandler(async (req, res) => {
       session.endSession();
     }
 
-    // إرسال الرمز للواجهة للعميل لمرة واحدة فقط
     res.status(201).json({
       ...createdOrder.toObject(),
       guestTrackingToken 
@@ -263,7 +260,6 @@ const updateOrderToDelivered = asyncHandler(async (req, res) => {
   }
 });
 
-// 🌟 نظام تتبع آمن يعتمد على الـ Token بدلاً من الإيميل
 const trackGuestOrder = asyncHandler(async (req, res) => {
   const { orderId, trackingToken } = req.body;
 
@@ -275,7 +271,6 @@ const trackGuestOrder = asyncHandler(async (req, res) => {
     res.status(400); throw new AppError('Invalid Order ID format.', 400);
   }
 
-  // نجلب الطلب مع الرمز السري لأننا أضفنا select: false في الـ Schema
   const order = await Order.findById(orderId).select('+guestTrackingToken');
 
   if (order) {
@@ -283,12 +278,10 @@ const trackGuestOrder = asyncHandler(async (req, res) => {
       res.status(401); throw new AppError('This is a registered user order. Please log in to track it.', 401); 
     }
     
-    // الفحص الأمني الصارم
     if (!order.guestTrackingToken || order.guestTrackingToken !== trackingToken) { 
       res.status(401); throw new AppError('Security Alert: Invalid tracking token. Access denied.', 401); 
     }
     
-    // إزالة الرمز قبل إرسال البيانات للواجهة لمزيد من الأمان
     const safeOrderData = order.toObject();
     delete safeOrderData.guestTrackingToken;
 
@@ -344,7 +337,11 @@ const cancelOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
 
   if (order) {
-    if (order.isGuest || order.user.toString() !== req.user._id.toString()) { res.status(401); throw new AppError('Not authorized to cancel this order.', 401); }
+    // 🌟 تم الإصلاح: السماح للمدير (Admin) أو صاحب الطلب بإلغاء الطلب
+    const isOwner = order.user && order.user.toString() === req.user._id.toString();
+    if (order.isGuest || (!isOwner && !req.user.isAdmin)) { 
+      res.status(401); throw new AppError('Not authorized to cancel this order.', 401); 
+    }
     
     if (order.isDelivered || order.status === 'Shipped' || order.isCancelled) { 
       res.status(400); throw new AppError('Order cannot be cancelled. It has already been shipped or processed.', 400); 

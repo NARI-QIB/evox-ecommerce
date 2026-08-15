@@ -18,4 +18,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-repomix-output.xmlrepomix-output.xml
+repomix-output.xml
+# استثناء مجلد صور المنتجات المحلي لمنع تضخم حجم المشروع على GitHub
+frontend/public/images/products/

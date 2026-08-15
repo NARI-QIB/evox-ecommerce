@@ -65,7 +65,6 @@ export const CartProvider = ({ children }) => {
   const { userInfo, updateUserSession } = useContext(AuthContext);
   const [hasMerged, setHasMerged] = useState(false);
 
-  // 🌟 وظيفة أمان قوية لفرز البيانات القديمة أو التالفة في المتصفح
   const getInitialCart = () => {
     try {
       const localCart = localStorage.getItem('cartItems');
@@ -83,7 +82,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 🌟 حماية إضافية ضد الـ Private Modes في المتصفحات
   const getInitialShippingAddress = () => {
     try {
       const val = localStorage.getItem('shippingAddress');
@@ -112,7 +110,8 @@ export const CartProvider = ({ children }) => {
 
   const syncCartMutation = useMutation({
     mutationFn: async (cartItems) => {
-      if (!Array.isArray(cartItems)) return;
+      if (!userInfo || !userInfo._id) return null;
+      if (!Array.isArray(cartItems)) return null;
 
       const safeItems = cartItems
         .filter(item => {
@@ -128,8 +127,16 @@ export const CartProvider = ({ children }) => {
           selectedSize: item.selectedSize || ''
         }));
 
-      const { data } = await axios.put('/api/users/profile/cart', { cartItems: safeItems });
-      return data;
+      try {
+        const { data } = await axios.put('/api/users/profile/cart', { cartItems: safeItems });
+        return data;
+      } catch (err) {
+        // 🌟 معالجة صامتة لخطأ 401 في حال انتهاء الجلسة لتجنب رسائل الخطأ في الكونسول
+        if (err.response?.status === 401) {
+          return null;
+        }
+        throw err;
+      }
     },
     onSuccess: (data) => {
       if (userInfo && data) updateUserSession({ cart: data });
@@ -141,8 +148,10 @@ export const CartProvider = ({ children }) => {
       localStorage.setItem('cartItems', JSON.stringify(state.cartItems));
     } catch (e) { /* Ignore */ }
 
-    if (userInfo && userInfo._id) syncCartMutation.mutate(state.cartItems);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 🌟 استدعاء المزامنة فقط عند وجود حساب نشط
+    if (userInfo && userInfo._id) {
+      syncCartMutation.mutate(state.cartItems);
+    }
   }, [state.cartItems, userInfo?._id]);
 
   useEffect(() => {

@@ -26,7 +26,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
 }
 
-/* 🌟 الإضافة الهامة: تطبيق خط عربي متناسق (Cairo) وإلغاء مسافات الحروف الإنجليزية عند التحويل للعربية */
+/* 🌟 تطبيق خط عربي متناسق (Cairo) وإلغاء مسافات الحروف الإنجليزية عند التحويل للعربية */
 html[dir="rtl"] body {
   font-family: 'Cairo', sans-serif;
 }
@@ -40,6 +40,27 @@ html[dir="rtl"] h6,
 html[dir="rtl"] .font-heading {
   font-family: 'Cairo', sans-serif;
   letter-spacing: normal; 
+}
+
+/* 🌟 توحيد لون التركيز (Focus) والتحديد لكافة الحقول إلى اللون البرتقالي البرمجي */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus {
+  outline-color: var(--color-primary);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--color-primary) !important;
+  outline: 2px solid var(--color-primary) !important;
+  outline-offset: 1px;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--color-primary) !important;
 }
 
 .hide-scrollbar::-webkit-scrollbar {

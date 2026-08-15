@@ -1,6 +1,11 @@
 // filepath: frontend/src/axiosSetup.js
 import axios from 'axios';
 
+// 🌟 تحديد رابط الـ API تلقائياً في بيئة الإنتاج إن وجد
+if (import.meta.env.VITE_API_URL) {
+  axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+}
+
 axios.defaults.withCredentials = true;
 
 let isRefreshing = false;
@@ -66,13 +71,16 @@ axios.interceptors.response.use(
       }
     }
 
+    // 🌟 التجديد التلقائي لرمز CSRF عند الانتهاء
     if (error.response && error.response.status === 403 && error.response.data?.message?.includes('CSRF')) {
       if (!originalRequest._retryCsrf) {
         originalRequest._retryCsrf = true;
         try {
           const { data } = await axios.get('/api/csrf-token');
           axios.defaults.headers.common['X-CSRF-Token'] = data.csrfToken;
+          axios.defaults.headers.common['x-csrf-token'] = data.csrfToken;
           originalRequest.headers['X-CSRF-Token'] = data.csrfToken;
+          originalRequest.headers['x-csrf-token'] = data.csrfToken;
           return axios(originalRequest);
         } catch (csrfError) {
           return Promise.reject(csrfError);
@@ -88,6 +96,7 @@ export const initializeCsrfProtection = async () => {
   try {
     const { data } = await axios.get('/api/csrf-token');
     axios.defaults.headers.common['csrf-token'] = data.csrfToken;
+    axios.defaults.headers.common['x-csrf-token'] = data.csrfToken;
     axios.defaults.headers.common['X-CSRF-Token'] = data.csrfToken; 
   } catch (error) {
     console.warn('⚠️ CSRF initialization failed. Secure routes might block requests.');

@@ -3,7 +3,6 @@ import { useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import CheckoutSteps from '../components/CheckoutSteps';
 import Button from '../components/ui/Button';
@@ -53,7 +52,7 @@ const PaymentScreen = () => {
               type="radio"
               value="Cash on Delivery"
               {...register("paymentMethod")}
-              className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 accent-blue-600"
+              className="w-5 h-5 text-primary border-gray-300 focus:ring-primary accent-primary cursor-pointer"
             />
             <div className="ms-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
@@ -72,7 +71,7 @@ const PaymentScreen = () => {
               value="PayPal"
               disabled
               {...register("paymentMethod")}
-              className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 accent-blue-600"
+              className="w-5 h-5 text-primary border-gray-300 focus:ring-primary accent-primary cursor-pointer"
             />
             <div className="ms-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">

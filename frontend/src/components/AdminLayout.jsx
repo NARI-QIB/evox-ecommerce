@@ -24,7 +24,7 @@ const AdminLayout = () => {
       const { data } = await axios.get('/api/settings');
       return data;
     },
-    staleTime: 1000 * 60 * 60 * 24,
+    staleTime: 1000 * 60 * 5, // 🌟 تم تعديل زمن الكاش إلى 5 دقائق لعكس تحديث الشعار فوراً
   });
 
   useEffect(() => {
@@ -113,7 +113,7 @@ const AdminLayout = () => {
           <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all duration-300">
             <FaStore className="text-lg text-gray-500" /> {t('adminLayout.view_store')}
           </Link>
-          <button onClick={logoutHandler} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 text-start focus:outline-none">
+          <button onClick={logoutHandler} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 text-start focus:outline-none cursor-pointer">
             <FaSignOutAlt className="text-lg rtl:rotate-180" /> {t('adminLayout.logout')}
           </button>
         </div>
@@ -125,7 +125,7 @@ const AdminLayout = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden text-gray-500 hover:text-primary focus:outline-none p-2 -ms-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="lg:hidden text-gray-500 hover:text-primary focus:outline-none p-2 -ms-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <FaBars className="text-xl" />
             </button>
