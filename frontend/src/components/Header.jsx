@@ -22,9 +22,11 @@ const Header = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
 
-  const [keyword, setKeyword] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  // 🌟 ربط الكلمة المفتاحية بشكل مباشر بالرابط عند أول تحميل فقط
+  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
+  const isFirstRender = useRef(true);
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
@@ -42,7 +44,6 @@ const Header = () => {
     return () => clearTimeout(timer);
   }, [cartCount]);
 
-  const searchParams = new URLSearchParams(location.search);
   const queryCategoryId = searchParams.get('category');
   const categoryMatch = location.pathname.match(/\/category\/(.+)/);
   const currentCategoryId = queryCategoryId || (categoryMatch ? categoryMatch[1] : null);
@@ -66,32 +67,38 @@ const Header = () => {
   });
 
   const displayCategories = categories.filter(cat => cat.name?.en?.toLowerCase() !== 'uncategorized');
-
   const currentCategoryObj = currentCategoryId && categories.length > 0
-    ? categories.find(c => c._id === currentCategoryId)
-    : null;
-
+    ? categories.find(c => c._id === currentCategoryId) : null;
   const currentCategoryName = getDBText(currentCategoryObj?.name);
 
-  useEffect(() => {
-    const currentKeyword = searchParams.get('keyword') || '';
-    if (!isTyping) setKeyword(currentKeyword);
-  }, [location.search, isTyping]);
+  // 🌟 نظام البحث الفوري (Live Search) المحسّن
+  const handleSearchChange = (e) => {
+    setKeyword(e.target.value);
+  };
 
   useEffect(() => {
-    if (!isTyping) return;
+    // منع تنفيذ البحث التلقائي عند أول تحميل للمكون
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // الانتظار 500ms بعد آخر حرف يكتبه المستخدم قبل التنفيذ الفعلي لمنع التحديثات المزعجة
     const delayDebounceFn = setTimeout(() => {
       const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
       if (keyword.trim()) {
+        // استخدم replace:true لتحديث الرابط دون إزعاج المتصفح أو فقدان الـ Focus
         navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`, { replace: true });
-      } else {
+      } else if (location.pathname === '/search') {
+        // إذا قام بمسح النص وهو في صفحة البحث، أعده للصفحة الرئيسية أو للقسم المحدد
         if (currentCategoryId) navigate(`/category/${ currentCategoryId }`, { replace: true });
         else navigate('/', { replace: true });
       }
-      setIsTyping(false);
-    }, 400);
+    }, 500);
+
     return () => clearTimeout(delayDebounceFn);
-  }, [keyword, navigate, isTyping, currentCategoryId]);
+  }, [keyword, navigate, currentCategoryId, location.pathname]);
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -130,28 +137,24 @@ const Header = () => {
     navigate('/login');
   };
 
-  const handleSearchChange = (e) => {
-    setKeyword(e.target.value);
-    setIsTyping(true);
-  };
-
-  const handleMobileSearchSubmit = (e) => {
+  // ميزة الإرسال اليدوي إذا ضغط Enter
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
     if (keyword.trim()) {
-      navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`, { replace: true });
+      navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`);
     } else {
-      if (currentCategoryId) navigate(`/category/${ currentCategoryId }`, { replace: true });
-      else navigate('/', { replace: true });
+      if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
+      else navigate('/');
     }
     setIsMobileSearchOpen(false);
-    setIsTyping(false);
     document.activeElement.blur();
   };
 
   const clearSearch = () => {
     setKeyword('');
-    setIsTyping(true);
+    if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
+    else navigate('/');
   };
 
   const handleCategorySelect = (catId) => {
@@ -193,9 +196,8 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* 🌟 شريط البحث المدمج مع القائمة المنسدلة: يتحول نص القائمة والأسهم للون البرتقالي عند التمرير */}
           <div className="hidden md:flex justify-center items-center flex-1 px-2 lg:px-6 z-20">
-            <div className="flex w-full md:max-w-md lg:max-w-2xl bg-gray-100/70 rounded-2xl border-2 border-transparent focus-within:border-primary focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/10 transition-all duration-300 shadow-inner relative h-12">
+            <form onSubmit={handleSearchSubmit} className="flex w-full md:max-w-md lg:max-w-2xl bg-gray-100/70 rounded-2xl border-2 border-transparent focus-within:border-primary focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/10 transition-all duration-300 shadow-inner relative h-12">
 
               <CustomSelect
                 options={categoryOptions}
@@ -213,9 +215,17 @@ const Header = () => {
 
               <div className="relative flex-1 h-full">
                 <input type="text" placeholder={currentCategoryName ? `${ t('header.search_in') } ${ currentCategoryName }...` : t('header.search_placeholder')} value={keyword} onChange={handleSearchChange} className="w-full h-full bg-transparent text-sm font-medium text-dark ps-4 pe-10 focus:outline-none rounded-e-2xl text-start" />
-                {keyword ? <button onClick={clearSearch} className="absolute inset-e-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors focus:outline-none p-1 cursor-pointer"><FaTimes /></button> : <FaSearch className="absolute inset-e-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />}
+                {keyword ? (
+                  <button type="button" onClick={clearSearch} className="absolute inset-e-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors focus:outline-none p-1 cursor-pointer">
+                    <FaTimes />
+                  </button>
+                ) : (
+                  <button type="submit" className="absolute inset-e-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors focus:outline-none p-1 cursor-pointer">
+                    <FaSearch />
+                  </button>
+                )}
               </div>
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center justify-end gap-3 sm:gap-5 shrink-0">
@@ -239,7 +249,6 @@ const Header = () => {
                   <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${ isUserDropdownOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary' }`} />
                 </button>
 
-                {/* 🌟 القائمة المنسدلة للمستخدم: تم تغيير خلفيات الخيارات عند التمرير إلى بيضاء تميل للبرتقالي hover:bg-primary/5 */}
                 <div className={`absolute z-50 inset-e-0 mt-3 w-56 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-100 transition-all duration-300 transform origin-top-right rtl:origin-top-left ${ isUserDropdownOpen ? 'opacity-100 scale-100 visible' : 'opacity-0 scale-95 invisible' }`}>
                   <div className="py-2 text-start">
                     <div className="px-4 py-3 border-b border-gray-50 mb-2 bg-gray-50/50 rounded-t-2xl">
@@ -280,12 +289,18 @@ const Header = () => {
         </div>
 
         <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out absolute inset-s-0 inset-e-0 top-full bg-white border-b border-gray-100 shadow-md z-40 ${ isMobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 border-transparent shadow-none' }`}>
-          <form onSubmit={handleMobileSearchSubmit} className="p-3">
+          <form onSubmit={handleSearchSubmit} className="p-3">
             <div className="flex w-full bg-gray-100/80 rounded-xl border border-gray-200 focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all h-12 relative">
               <div className="relative flex-1 h-full">
-                <div className="absolute inset-s-3 top-1/2 transform -translate-y-1/2 text-gray-400"><FaSearch /></div>
+                <button type="submit" className="absolute inset-s-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none cursor-pointer">
+                  <FaSearch />
+                </button>
                 <input type="text" placeholder={t('header.search_placeholder')} value={keyword} onChange={handleSearchChange} className="w-full h-full bg-transparent text-sm font-medium text-dark ps-10 pe-10 focus:outline-none rounded-xl text-start" />
-                {keyword && <button type="button" onClick={clearSearch} className="absolute inset-e-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none p-1 cursor-pointer"><FaTimes /></button>}
+                {keyword && (
+                  <button type="button" onClick={clearSearch} className="absolute inset-e-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 focus:outline-none p-1 cursor-pointer">
+                    <FaTimes />
+                  </button>
+                )}
               </div>
             </div>
           </form>

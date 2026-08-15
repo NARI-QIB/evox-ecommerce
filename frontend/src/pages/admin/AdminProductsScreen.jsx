@@ -117,7 +117,8 @@ const AdminProductsScreen = () => {
   const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
   const categoryOptions = [
-    { value: '', label: t('admin.all_categories', 'جميع التصنيفات') },
+    // 🌟 تحديث لغة الخيار الافتراضي للتصنيفات ليستخدم i18n
+    { value: '', label: t('header.all_categories') },
     ...categories.map((cat) => ({
       value: cat._id,
       label: getDBText(cat.name)
@@ -189,7 +190,6 @@ const AdminProductsScreen = () => {
             {searchInput && <button type="button" onClick={() => setSearchInput('')} className="absolute inset-e-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 bg-gray-100 p-1 rounded-full transition-colors cursor-pointer"><FaTimes className="text-xs" /></button>}
           </form>
 
-          {/* 🌟 قائمة اختيار التصنيفات المفلترة باستخدام CustomSelect */}
           {categories.length > 0 && (
             <CustomSelect
               options={categoryOptions}
