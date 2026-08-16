@@ -1,32 +1,36 @@
 // filepath: backend/utils/sendEmail.js
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const sendEmail = async (options) => {
-  // 🌟 اتصال مباشر بخوادم Gmail عبر منفذ SSL 465 لضمان عدم حظر الاتصال في السيرفرات السحابية
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // استخدام التشفير الكامل عبر SSL
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false, // تجاوز تعارض الشهادات في بيئات الاستضافة
-    },
-    connectionTimeout: 15000, // مهلة انتظار 15 ثانية للاتصال
-  });
+  // 🌟 إرسال الإيميل عبر Google Serverless Microservice (HTTPS Port 443)
+  if (process.env.GOOGLE_SCRIPT_URL) {
+    try {
+      const response = await axios.post(
+        process.env.GOOGLE_SCRIPT_URL,
+        {
+          email: options.email,
+          subject: options.subject,
+          html: options.html || `<p>${options.message}</p>`,
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 15000,
+        }
+      );
 
-  const mailOptions = {
-    // يظهر اسم المتجر بدلاً من الإيميل فقط في صندوق الوارد
-    from: `"${process.env.STORE_NAME || 'EVOX'}" <${process.env.EMAIL_USER}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message, // نص خام كخيار احتياطي للأجهزة القديمة
-    html: options.html,    // تصميم القالب المتجاوب HTML
-  };
-
-  await transporter.sendMail(mailOptions);
+      if (response.data && response.data.result === 'success') {
+        console.log(`✅ Email successfully sent via Google Microservice to: ${options.email}`);
+        return;
+      } else {
+        throw new Error(response.data?.message || 'Failed to send email via Google Script');
+      }
+    } catch (error) {
+      console.error('❌ Google Script Error:', error.message);
+      throw error;
+    }
+  } else {
+    throw new Error('GOOGLE_SCRIPT_URL is not defined in environment variables');
+  }
 };
 
 module.exports = sendEmail;
