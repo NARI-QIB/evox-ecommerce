@@ -1,44 +1,32 @@
+// filepath: backend/utils/sendEmail.js
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
-  try {
-    console.log("📧 جاري محاولة إرسال بريد حقيقي بتخطي حظر الـ DNS...");
+  // 🌟 اتصال مباشر بخوادم Gmail عبر منفذ SSL 465 لضمان عدم حظر الاتصال في السيرفرات السحابية
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // استخدام التشفير الكامل عبر SSL
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false, // تجاوز تعارض الشهادات في بيئات الاستضافة
+    },
+    connectionTimeout: 15000, // مهلة انتظار 15 ثانية للاتصال
+  });
 
-    const transporter = nodemailer.createTransport({
-      // 🌟 وضعنا عنوان الـ IP المباشر لخادم جوجل لتخطي الـ (queryA ETIMEOUT) نهائياً
-      host: '142.250.102.108', 
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        // 🌟 السماح بالاتصال وتأكيد هوية جوجل (SNI) رغم استخدام الـ IP المباشر
-        rejectUnauthorized: false,
-        servername: 'smtp.gmail.com' 
-      },
-      // زيادة وقت الانتظار لتفادي بطء الشبكة المحلية
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
+  const mailOptions = {
+    // يظهر اسم المتجر بدلاً من الإيميل فقط في صندوق الوارد
+    from: `"${process.env.STORE_NAME || 'EVOX'}" <${process.env.EMAIL_USER}>`,
+    to: options.email,
+    subject: options.subject,
+    text: options.message, // نص خام كخيار احتياطي للأجهزة القديمة
+    html: options.html,    // تصميم القالب المتجاوب HTML
+  };
 
-    const mailOptions = {
-      from: `"${process.env.STORE_NAME || 'Evox Store'}" <${process.env.EMAIL_USER}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message, 
-      html: options.html,    
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log("✅ تم إرسال الإيميل بنجاح! تفاصيل الاستجابة: " + info.response);
-
-  } catch (error) {
-    console.error("❌ فشل إرسال الإيميل. تفاصيل الخطأ:", error.message);
-    throw new Error('Email sending failed');
-  }
+  await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail;

@@ -8,6 +8,8 @@
     "server": "nodemon server.js",
     "client": "npm run dev --prefix ../frontend",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
+        "data:local": "node local-seeder.js",
+    "data:cloud": "node cloud-seeder.js",
     "data:import": "node seeder.js"
   },
   "dependencies": {
