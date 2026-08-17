@@ -1,6 +1,6 @@
 // filepath: frontend/src/pages/ProductScreen.jsx
 import { useState, useContext, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,10 @@ import Rating from '../components/Rating';
 import ProductGallery from '../components/ProductGallery';
 import ProductReviews from '../components/ProductReviews';
 import Button from '../components/ui/Button';
-import { FaShoppingCart, FaExclamationCircle, FaPlus, FaMinus, FaHeart, FaRegHeart, FaCheckCircle, FaInfoCircle, FaListUl } from 'react-icons/fa';
+import {
+  FaShoppingCart, FaExclamationCircle, FaPlus, FaMinus,
+  FaHeart, FaRegHeart, FaCheckCircle, FaInfoCircle, FaListUl, FaFire
+} from 'react-icons/fa';
 import { useLanguage } from '../context/LanguageContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import Product from '../components/Product';
@@ -147,6 +150,8 @@ const ProductScreen = () => {
   const fullImageGallery = [product.image, ...(product.images || [])].filter(Boolean);
   const maxAllowedQty = Math.min(product.countInStock, 10);
 
+  const isLowStock = product.countInStock > 0 && product.countInStock <= 20;
+
   return (
     <>
       <div className="container mx-auto px-4 py-8 animate-fade-in-up pb-24 md:pb-8 relative">
@@ -162,7 +167,9 @@ const ProductScreen = () => {
 
         {/* Main Product Section */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 mb-12 relative overflow-hidden">
-          <button onClick={toggleWishlistHandler} className="absolute top-6 right-6 z-10 p-3 bg-white/80 backdrop-blur border border-gray-100 rounded-full shadow-sm hover:scale-110 transition-all cursor-pointer">
+
+          {/* 🌟 تم الإصلاح: تغيير right-6 إلى start-6 لمنع التداخل مع زر تكبير الصورة */}
+          <button onClick={toggleWishlistHandler} className="absolute top-6 start-6 z-20 p-3 bg-white/80 backdrop-blur border border-gray-100 rounded-full shadow-sm hover:scale-110 transition-all cursor-pointer">
             {isWishlisted ? <FaHeart className="text-red-500 text-xl" /> : <FaRegHeart className="text-gray-400 hover:text-red-500 text-xl" />}
           </button>
 
@@ -194,14 +201,23 @@ const ProductScreen = () => {
 
               <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-100 mb-8">
 
-                {/* 🌟 التعديل هنا: إصلاح مشكلة الجوال لشريط الحالة */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-4 border-b border-gray-200/60">
                   <span className="font-bold text-gray-500 uppercase tracking-widest text-xs sm:text-sm">{t('product.status', 'Availability')}:</span>
                   <span className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider shadow-sm border ${ product.countInStock > 0 ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200' }`}>
                     {product.countInStock > 0 ? t('product.in_stock', 'IN STOCK - SHIPS IMMEDIATELY') : t('product.out_of_stock', 'SOLD OUT')}
                   </span>
                 </div>
-                {/* 🌟 نهاية التعديل */}
+
+                {isLowStock && (
+                  <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3.5 rounded-xl mb-6 shadow-sm">
+                    <FaFire className="text-xl shrink-0 animate-pulse text-orange-500" />
+                    <span className="text-sm font-bold leading-tight">
+                      {lang === 'ar'
+                        ? `سارع بالشراء! تبقى ${ product.countInStock } قطع فقط من هذا المنتج قبل انتهاء الكمية.`
+                        : `Hurry up! Only ${ product.countInStock } items left in stock before it's gone.`}
+                    </span>
+                  </div>
+                )}
 
                 {product.countInStock > 0 && (
                   <div className="space-y-5">
@@ -243,7 +259,7 @@ const ProductScreen = () => {
           </div>
         </div>
 
-        {/* 🌟 World-Class Details Section (Features & Specs) */}
+        {/* World-Class Details Section (Features & Specs) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
           <div className="lg:col-span-2 space-y-8">
             {product.features && product.features.length > 0 && (
@@ -285,7 +301,6 @@ const ProductScreen = () => {
             )}
           </div>
 
-          {/* 🌟 PREMIUM HYBRID INFO CARD: Navy Dark for Trust + Orange for Attention */}
           <div className="bg-[var(--color-dark)] text-white rounded-3xl p-8 h-fit sticky top-24 shadow-xl shadow-slate-200 transition-all duration-300 border border-white/5">
             <div className="flex items-center gap-3 mb-4">
               <FaInfoCircle className="text-[var(--color-primary)] text-2xl" />
@@ -319,7 +334,8 @@ const ProductScreen = () => {
         </div>
       </div>
 
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 z-40 transition-transform duration-500 ease-out shadow-2xl ${ showStickyBar ? 'translate-y-0' : 'translate-y-full' }`}>
+      {/* 🌟 تم الإصلاح: تحويل left-0 right-0 إلى الخصائص المنطقية inset-x-0 */}
+      <div className={`md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 z-40 transition-transform duration-500 ease-out shadow-2xl ${ showStickyBar ? 'translate-y-0' : 'translate-y-full' }`}>
         <div className="flex justify-between items-center gap-4 max-w-7xl mx-auto">
           <div className="flex-1 min-w-0 text-start">
             <p className="text-xs text-gray-500 font-bold truncate uppercase tracking-widest">{getDBText(product.name)}</p>

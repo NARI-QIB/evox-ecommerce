@@ -141,7 +141,8 @@ const Chatbot = () => {
 
   return (
     <>
-      <div className="fixed bottom-6 end-6 z-[100] flex flex-col items-end pointer-events-none">
+      {/* 🌟 تم الإصلاح: إضافة bottom-28 لشاشات الجوال لرفعه فوق الشريط اللاصق */}
+      <div className="fixed bottom-28 md:bottom-6 end-4 md:end-6 z-[100] flex flex-col items-end pointer-events-none transition-all duration-300">
 
         <div
           className={`mb-4 w-[90vw] sm:w-[380px] h-[500px] max-h-[75vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden transition-all duration-500 origin-bottom-right rtl:origin-bottom-left border border-gray-100 ${ isOpen ? 'scale-100 opacity-100 pointer-events-auto translate-y-0' : 'scale-75 opacity-0 pointer-events-none translate-y-10'
