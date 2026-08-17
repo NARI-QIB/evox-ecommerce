@@ -24,9 +24,80 @@ const Header = () => {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
 
-  // 🌟 ربط الكلمة المفتاحية بشكل مباشر بالرابط عند أول تحميل فقط
-  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
-  const isFirstRender = useRef(true);
+  // ==========================================
+  // 🌟 نظام البحث الفوري المحسّن والخالي من الأخطاء
+  // ==========================================
+  const urlKeyword = searchParams.get('keyword') || '';
+  const [keyword, setKeyword] = useState(urlKeyword);
+  const isTyping = useRef(false); // مراقب لمعرفة ما إذا كان المستخدم يكتب يدوياً
+
+  // 1. مزامنة حقل البحث مع الرابط وتفريغه عند الخروج من صفحة البحث
+  useEffect(() => {
+    if (location.pathname !== '/search') {
+      setKeyword('');
+      isTyping.current = false;
+    } else {
+      setKeyword(urlKeyword);
+    }
+  }, [location.pathname, urlKeyword]);
+
+  // 2. تتبع الإدخال اليدوي للمستخدم
+  const handleSearchChange = (e) => {
+    setKeyword(e.target.value);
+    isTyping.current = true;
+  };
+
+  const queryCategoryId = searchParams.get('category');
+  const categoryMatch = location.pathname.match(/\/category\/(.+)/);
+  const currentCategoryId = queryCategoryId || (categoryMatch ? categoryMatch[1] : null);
+
+  // 3. التوجيه التلقائي بعد التوقف عن الكتابة (Debounce)
+  useEffect(() => {
+    if (!isTyping.current) return; // منع التوجيه إذا لم يقم المستخدم بالكتابة
+
+    const delayDebounceFn = setTimeout(() => {
+      const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
+
+      if (keyword.trim()) {
+        navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`, { replace: true });
+      } else {
+        if (currentCategoryId) navigate(`/category/${ currentCategoryId }`, { replace: true });
+        else navigate('/', { replace: true });
+      }
+      isTyping.current = false; // إعادة الضبط بعد التوجيه
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [keyword, currentCategoryId, navigate]);
+
+  const clearSearch = () => {
+    setKeyword('');
+    isTyping.current = false;
+    if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
+    else navigate('/');
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    isTyping.current = false;
+    const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
+    if (keyword.trim()) {
+      navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`);
+    } else {
+      if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
+      else navigate('/');
+    }
+    setIsMobileSearchOpen(false);
+    document.activeElement.blur();
+  };
+
+  const handleCategorySelect = (catId) => {
+    setIsMobileMenuOpen(false);
+    isTyping.current = false;
+    if (keyword.trim()) navigate(`/search?keyword=${ keyword.trim() }${ catId ? `&category=${ catId }` : '' }`);
+    else navigate(catId ? `/category/${ catId }` : '/');
+  };
+  // ==========================================
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
@@ -43,10 +114,6 @@ const Header = () => {
     const timer = setTimeout(() => setIsCartBumping(false), 300);
     return () => clearTimeout(timer);
   }, [cartCount]);
-
-  const queryCategoryId = searchParams.get('category');
-  const categoryMatch = location.pathname.match(/\/category\/(.+)/);
-  const currentCategoryId = queryCategoryId || (categoryMatch ? categoryMatch[1] : null);
 
   const { data: globalSettings } = useQuery({
     queryKey: ['globalSettings'],
@@ -70,35 +137,6 @@ const Header = () => {
   const currentCategoryObj = currentCategoryId && categories.length > 0
     ? categories.find(c => c._id === currentCategoryId) : null;
   const currentCategoryName = getDBText(currentCategoryObj?.name);
-
-  // 🌟 نظام البحث الفوري (Live Search) المحسّن
-  const handleSearchChange = (e) => {
-    setKeyword(e.target.value);
-  };
-
-  useEffect(() => {
-    // منع تنفيذ البحث التلقائي عند أول تحميل للمكون
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    // الانتظار 500ms بعد آخر حرف يكتبه المستخدم قبل التنفيذ الفعلي لمنع التحديثات المزعجة
-    const delayDebounceFn = setTimeout(() => {
-      const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
-      if (keyword.trim()) {
-        // استخدم replace:true لتحديث الرابط دون إزعاج المتصفح أو فقدان الـ Focus
-        navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`, { replace: true });
-      } else if (location.pathname === '/search') {
-        // إذا قام بمسح النص وهو في صفحة البحث، أعده للصفحة الرئيسية أو للقسم المحدد
-        if (currentCategoryId) navigate(`/category/${ currentCategoryId }`, { replace: true });
-        else navigate('/', { replace: true });
-      }
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [keyword, navigate, currentCategoryId, location.pathname]);
-
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -135,32 +173,6 @@ const Header = () => {
     setIsMobileMenuOpen(false);
     logout();
     navigate('/login');
-  };
-
-  // ميزة الإرسال اليدوي إذا ضغط Enter
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    const categoryQuery = currentCategoryId ? `&category=${ currentCategoryId }` : '';
-    if (keyword.trim()) {
-      navigate(`/search?keyword=${ keyword.trim() }${ categoryQuery }`);
-    } else {
-      if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
-      else navigate('/');
-    }
-    setIsMobileSearchOpen(false);
-    document.activeElement.blur();
-  };
-
-  const clearSearch = () => {
-    setKeyword('');
-    if (currentCategoryId) navigate(`/category/${ currentCategoryId }`);
-    else navigate('/');
-  };
-
-  const handleCategorySelect = (catId) => {
-    setIsMobileMenuOpen(false);
-    if (keyword.trim()) navigate(`/search?keyword=${ keyword.trim() }${ catId ? `&category=${ catId }` : '' }`);
-    else navigate(catId ? `/category/${ catId }` : '/');
   };
 
   const categoryOptions = [
