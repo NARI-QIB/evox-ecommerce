@@ -1,3 +1,4 @@
+// filepath: frontend/src/App.jsx
 import { Suspense, lazy, useContext, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -49,6 +50,18 @@ const AdminUserEditScreen = lazy(() => import('./pages/admin/AdminUserEditScreen
 const AdminAnalyticsScreen = lazy(() => import('./pages/admin/AdminAnalyticsScreen'));
 const AdminSettingsScreen = lazy(() => import('./pages/admin/AdminSettingsScreen'));
 
+// 🌟 الحل الهندسي الموحد لمشكلة التمرير (Scroll to Top)
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // إجبار المتصفح على الصعود لأعلى الصفحة فوراً عند كل انتقال بين الصفحات
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 const Loader = () => {
   const { t } = useTranslation();
   return (
@@ -85,7 +98,6 @@ const PublicLayout = () => {
   return (
     <div className="flex flex-col min-h-screen bg-light relative">
       <Header />
-      {/* 🌟 تم استبدال flex-grow بـ grow لتوافق أفضل مع Tailwind v4.0 */}
       <main className="grow w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
@@ -157,6 +169,9 @@ function App() {
 
   return (
     <Router>
+      {/* 🌟 دمجنا المكون هنا ليراقب كافة التحركات في التطبيق */}
+      <ScrollToTop />
+
       <Routes>
         <Route element={<PublicLayout />}>
           {/* مسارات التسوق */}
