@@ -252,23 +252,33 @@ const UserOrderDetailsScreen = () => {
         <div>
           <h3 className="font-bold text-gray-500 uppercase tracking-widest text-xs mb-4">{t('orderDetails.purchased_items')}</h3>
           <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-            {displayOrder.orderItems.map((item, idx) => (
-              <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/30 transition-colors gap-4">
-                <div className="flex items-center gap-4">
-                  <img src={item.image} alt={getDBText(item.name)} className="w-16 h-16 rounded-xl object-cover border border-gray-100 bg-white" />
-                  <div>
-                    <Link to={`/product/${ item.product }`} className="font-bold text-dark hover:text-primary transition-colors line-clamp-1">
-                      {getDBText(item.name, item.name)}
-                    </Link>
-                    <div className="flex gap-2 mt-1">
-                      <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{t('orderDetails.qty')}: {item.qty}</span>
-                      {item.selectedSize && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{t('orderDetails.size')}: {item.selectedSize}</span>}
+            {/* 🌟 تم الإصلاح: التعامل مع الطلبات الخالية من المنتجات في واجهة العميل */}
+            {!displayOrder.orderItems || displayOrder.orderItems.length === 0 ? (
+              <div className="py-8 text-center bg-gray-50">
+                <p className="text-gray-500 font-bold">{t('orderDetails.empty_order', 'No items found.')}</p>
+              </div>
+            ) : (
+              displayOrder.orderItems.map((item, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/30 transition-colors gap-4">
+                  <div className="flex items-center gap-4">
+                    <img src={item.image || '/images/placeholder.png'} alt={getDBText(item.name)} className="w-16 h-16 rounded-xl object-cover border border-gray-100 bg-white p-1" />
+                    <div>
+                      <Link to={`/product/${ item.product }`} className="font-bold text-dark hover:text-primary transition-colors line-clamp-2">
+                        {getDBText(item.name, item.name)}
+                      </Link>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{t('orderDetails.qty')}: {item.qty}</span>
+                        {item.selectedSize && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{t('orderDetails.size')}: {item.selectedSize}</span>}
+                      </div>
                     </div>
                   </div>
+                  <div className="flex flex-col text-end shrink-0" dir="ltr">
+                    <span className="font-black text-primary text-lg">${(item.price * item.qty).toFixed(2)}</span>
+                    {item.qty > 1 && <span className="text-[10px] text-gray-400 font-bold mt-1">${item.price.toFixed(2)} each</span>}
+                  </div>
                 </div>
-                <span className="font-black text-primary text-lg text-end sm:text-start" dir="ltr">${(item.price * item.qty).toFixed(2)}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

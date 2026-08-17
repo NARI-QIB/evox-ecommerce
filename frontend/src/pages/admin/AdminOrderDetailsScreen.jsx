@@ -221,20 +221,34 @@ const AdminOrderDetailsScreen = () => {
               <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50"><h2 className="text-xl font-bold flex items-center gap-2"><FaBoxOpen className="text-primary" /> {t('adminOrderDetails.order_items')}</h2></div>
                 <div className="p-6 space-y-4 text-start">
-                  {order.orderItems.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-4 border-b border-gray-50 last:border-0">
-                      <div className="flex gap-4">
-                        <img src={item.image} alt={getDBText(item.name)} className="w-16 h-16 object-cover rounded-xl border border-gray-100 bg-gray-50" />
-                        <div>
-                          <Link to={`/product/${ item.product }`} className="font-bold hover:text-primary transition-colors">{getDBText(item.name)}</Link>
-                          <p className="text-sm text-gray-500">{t('adminOrderDetails.qty')} {item.qty}</p>
+                  {/* 🌟 تم الإصلاح: التعامل مع الطلبات الخالية من المنتجات */}
+                  {!order.orderItems || order.orderItems.length === 0 ? (
+                    <div className="py-8 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                      <FaBoxOpen className="text-4xl text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 font-bold">{t('adminOrderDetails.empty_order', 'Order items missing or corrupted.')}</p>
+                    </div>
+                  ) : (
+                    order.orderItems.map((item, idx) => (
+                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-gray-50 last:border-0 gap-4">
+                        <div className="flex items-center gap-4">
+                          <img src={item.image || '/images/placeholder.png'} alt={getDBText(item.name)} className="w-16 h-16 object-cover rounded-xl border border-gray-100 bg-gray-50 p-1" />
+                          <div>
+                            <Link to={`/product/${ item.product }`} className="font-bold text-dark hover:text-primary transition-colors line-clamp-2">
+                              {getDBText(item.name, item.name)}
+                            </Link>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">{t('adminOrderDetails.qty', 'Qty')}: {item.qty}</span>
+                              {item.selectedSize && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">{t('adminOrderDetails.size', 'Size')}: {item.selectedSize}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-end shrink-0" dir="ltr">
+                          <p className="font-black text-primary text-lg">{formatCurrency(item.price * item.qty)}</p>
+                          {item.qty > 1 && <p className="text-[10px] text-gray-400 font-bold mt-1">{formatCurrency(item.price)} {t('adminOrderDetails.each', 'each')}</p>}
                         </div>
                       </div>
-                      <div className="text-end" dir="ltr">
-                        <p className="font-black">{formatCurrency(item.price * item.qty)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -253,7 +267,6 @@ const AdminOrderDetailsScreen = () => {
                   <div className="space-y-3 pt-4 border-t border-gray-100">
                     <label className="block text-sm font-bold text-dark">{t('adminOrderDetails.update_status')}</label>
 
-                    {/* 🌟 قائمة خيارات حالة الطلب المحدثة بالمكون الموحد CustomSelect */}
                     <CustomSelect
                       options={statusOptions}
                       value={status}

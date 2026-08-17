@@ -120,7 +120,7 @@ export const CartProvider = ({ children }) => {
         })
         .map(item => ({
           product: item.product || item._id,
-          name: item.name || 'Unknown',
+          name: typeof item.name === 'object' ? (item.name.en || 'Unknown') : (item.name || 'Unknown'),
           image: typeof item.image === 'string' ? item.image : '/images/placeholder.png',
           price: Number(item.price) || 0,
           qty: Number(item.qty) || 1,
@@ -128,10 +128,14 @@ export const CartProvider = ({ children }) => {
         }));
 
       try {
-        const { data } = await axios.put('/api/users/profile/cart', { cartItems: safeItems });
+        // 🌟 الحل الجذري هنا: إذا كانت السلة فارغة، نرسل clearCart: true لكي يتجاوز حماية الـ Backend ويمسحها فعلياً
+        const { data } = await axios.put('/api/users/profile/cart', {
+          cartItems: safeItems,
+          clearCart: safeItems.length === 0
+        });
         return data;
       } catch (err) {
-        // 🌟 معالجة صامتة لخطأ 401 في حال انتهاء الجلسة لتجنب رسائل الخطأ في الكونسول
+        // معالجة صامتة لخطأ 401 في حال انتهاء الجلسة لتجنب رسائل الخطأ في الكونسول
         if (err.response?.status === 401) {
           return null;
         }
@@ -148,7 +152,7 @@ export const CartProvider = ({ children }) => {
       localStorage.setItem('cartItems', JSON.stringify(state.cartItems));
     } catch (e) { /* Ignore */ }
 
-    // 🌟 استدعاء المزامنة فقط عند وجود حساب نشط
+    // استدعاء المزامنة فقط عند وجود حساب نشط
     if (userInfo && userInfo._id) {
       syncCartMutation.mutate(state.cartItems);
     }

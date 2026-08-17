@@ -1,4 +1,3 @@
-
 const Product = require('../models/productModel');
 const Order = require('../models/orderModel'); 
 const AppError = require('../utils/AppError');
@@ -67,7 +66,8 @@ const processAndVerifyOrder = async (orderItems, session) => {
     const taxPrice = addDecimals(0.15 * itemsPrice);
     const totalPrice = addDecimals(itemsPrice + shippingPrice + taxPrice);
 
-    return { verifiedOrderItems, itemsPrice, shippingPrice, taxPrice, totalPrice };
+    // 🌟 تم الإصلاح هنا: إرجاع المصفوفة باسم orderItems لكي تتطابق مع المودل
+    return { orderItems: verifiedOrderItems, itemsPrice, shippingPrice, taxPrice, totalPrice };
 
   } catch (error) {
     if (!session && verifiedOrderItems.length > 0) {

@@ -64,8 +64,8 @@ const addOrderItems = asyncHandler(async (req, res) => {
     if (session) {
       await session.abortTransaction();
       session.endSession();
-    } else if (orderDetails && orderDetails.verifiedOrderItems) {
-      await restoreInventory(orderDetails.verifiedOrderItems, null);
+    } else if (orderDetails && orderDetails.orderItems) { // 🌟 تم الإصلاح هنا (تعديل الاسم ليطابق)
+      await restoreInventory(orderDetails.orderItems, null);
     }
     res.status(400); throw new AppError(error.message, 400);
   }
@@ -114,8 +114,8 @@ const addGuestOrderItems = asyncHandler(async (req, res) => {
     if (session) {
       await session.abortTransaction();
       session.endSession();
-    } else if (orderDetails && orderDetails.verifiedOrderItems) {
-      await restoreInventory(orderDetails.verifiedOrderItems, null);
+    } else if (orderDetails && orderDetails.orderItems) { // 🌟 تم الإصلاح هنا
+      await restoreInventory(orderDetails.orderItems, null);
     }
     res.status(400); throw new AppError(error.message, 400);
   }
