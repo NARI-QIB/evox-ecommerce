@@ -1,6 +1,7 @@
 // filepath: frontend/src/pages/ProductScreen.jsx
 import { useState, useContext, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-dom';
+// 🌟 تم الإصلاح هنا: الاستيراد الصحيح من react-router-dom
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -168,7 +169,6 @@ const ProductScreen = () => {
         {/* Main Product Section */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-10 mb-12 relative overflow-hidden">
 
-          {/* 🌟 تم الإصلاح: تغيير right-6 إلى start-6 لمنع التداخل مع زر تكبير الصورة */}
           <button onClick={toggleWishlistHandler} className="absolute top-6 start-6 z-20 p-3 bg-white/80 backdrop-blur border border-gray-100 rounded-full shadow-sm hover:scale-110 transition-all cursor-pointer">
             {isWishlisted ? <FaHeart className="text-red-500 text-xl" /> : <FaRegHeart className="text-gray-400 hover:text-red-500 text-xl" />}
           </button>
@@ -334,7 +334,6 @@ const ProductScreen = () => {
         </div>
       </div>
 
-      {/* 🌟 تم الإصلاح: تحويل left-0 right-0 إلى الخصائص المنطقية inset-x-0 */}
       <div className={`md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-gray-200 p-4 z-40 transition-transform duration-500 ease-out shadow-2xl ${ showStickyBar ? 'translate-y-0' : 'translate-y-full' }`}>
         <div className="flex justify-between items-center gap-4 max-w-7xl mx-auto">
           <div className="flex-1 min-w-0 text-start">
